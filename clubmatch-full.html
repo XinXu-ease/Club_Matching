@@ -19,6 +19,16 @@
   --phone-w:390px; --phone-h:844px;
   --radius:20px;
   --shadow:0 32px 72px rgba(38,70,83,.18),0 6px 20px rgba(38,70,83,.10);
+  
+  /* Student theme colors */
+  --primary-gradient: linear-gradient(135deg,var(--peach),var(--coral));
+  --secondary-bg: rgba(244,162,97,.15);
+  --theme-accent: var(--coral);
+  
+  /* Admin theme colors (store for potential use) */
+  --admin-primary: var(--teal);
+  --admin-gradient: linear-gradient(135deg,var(--teal),#22857a);
+  --admin-secondary-bg: rgba(42,157,143,.12);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8E4D8;overflow:hidden}
@@ -269,7 +279,8 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
 .hero-back svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round}
 .hero-actions{display:flex;gap:8px}
 .hero-act{width:32px;height:32px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.hero-act svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round}
+.hero-act svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;transition:.3s}
+.hero-act.liked svg{stroke:#E76F51;fill:#E76F51}
 .club-verified{display:inline-flex;align-items:center;gap:4px;background:rgba(42,157,143,.25);border:1px solid rgba(42,157,143,.4);padding:3px 8px;border-radius:10px;font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
 .club-name-lg{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#fff;margin-bottom:2px;position:relative;z-index:1}
 .club-slogan{font-size:13px;color:rgba(255,255,255,.55);font-style:italic;position:relative;z-index:1}
@@ -293,7 +304,7 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
 .info-block{padding:16px 20px;background:var(--white);margin-bottom:8px}
 .ib-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px;text-transform:uppercase;letter-spacing:.07em}
 .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.ig-item{}
+.ig-item{flex:1}
 .ig-lb{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
 .ig-val{font-size:13px;color:var(--text)}
 .tag-grid{display:flex;gap:6px;flex-wrap:wrap}
@@ -637,28 +648,28 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
       <div class="mbanner-btn">开始匹配</div>
     </div>
 
-    <div class="chip-row" style="margin-bottom:14px">
-      <div class="chip on">全部</div>
-      <div class="chip off" onclick="this.closest('.chip-row').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));this.classList.add('on')">🎨 艺术</div>
-      <div class="chip off" onclick="this.closest('.chip-row').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));this.classList.add('on')">⚽ 体育</div>
-      <div class="chip off" onclick="this.closest('.chip-row').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));this.classList.add('on')">🔬 学术</div>
-      <div class="chip off" onclick="this.closest('.chip-row').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));this.classList.add('on')">💼 职业</div>
-      <div class="chip off" onclick="this.closest('.chip-row').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));this.classList.add('on')">🌱 公益</div>
+    <div class="chip-row" style="margin-bottom:14px" id="category-filter">
+      <div class="chip on" onclick="filterByCategory(null, this)">全部</div>
+      <div class="chip off" onclick="filterByCategory('🎨 艺术', this)">🎨 艺术</div>
+      <div class="chip off" onclick="filterByCategory('⚽ 体育', this)">⚽ 体育</div>
+      <div class="chip off" onclick="filterByCategory('🔬 学术', this)">🔬 学术</div>
+      <div class="chip off" onclick="filterByCategory('💼 职业', this)">💼 职业</div>
+      <div class="chip off" onclick="filterByCategory('🌱 公益', this)">🌱 公益</div>
     </div>
 
     <div class="sec">
       <div class="sec-hd"><div class="sec-title">🔥 热门社团</div><div class="sec-more" onclick="go('s-search')">查看全部</div></div>
       <div class="hscroll">
-        <div class="club-card-h" onclick="go('s-club')"><div class="cch-img" style="background:linear-gradient(135deg,rgba(42,157,143,.12),rgba(42,157,143,.04))">🎭</div><div class="cch-body"><div class="cch-name">戏剧社</div><div class="cch-desc">表演、剧本、舞台制作</div><div class="cch-tags"><div class="mini-tag mini-warm">招新中</div><div class="mini-tag">低门槛</div></div></div></div>
-        <div class="club-card-h" onclick="go('s-club')"><div class="cch-img" style="background:linear-gradient(135deg,rgba(233,196,106,.15),rgba(244,162,97,.06))">📸</div><div class="cch-body"><div class="cch-name">摄影协会</div><div class="cch-desc">记录生活，展览作品</div><div class="cch-tags"><div class="mini-tag mini-warm">招新中</div><div class="mini-tag">中等投入</div></div></div></div>
-        <div class="club-card-h" onclick="go('s-club')"><div class="cch-img" style="background:linear-gradient(135deg,rgba(231,111,81,.1),rgba(244,162,97,.06))">💻</div><div class="cch-body"><div class="cch-name">计算机协会</div><div class="cch-desc">编程、竞赛、项目实战</div><div class="cch-tags"><div class="mini-tag">有门槛</div><div class="mini-tag">高投入</div></div></div></div>
-        <div class="club-card-h" onclick="go('s-club')"><div class="cch-img" style="background:linear-gradient(135deg,rgba(42,157,143,.08),rgba(38,70,83,.04))">🌿</div><div class="cch-body"><div class="cch-name">环保公益社</div><div class="cch-desc">公益、环境、社区活动</div><div class="cch-tags"><div class="mini-tag mini-warm">招新中</div><div class="mini-tag">低门槛</div></div></div></div>
+        <div class="club-card-h" onclick="go('s-club', {clubId:'drama'})"><div class="cch-img" style="background:linear-gradient(135deg,rgba(42,157,143,.12),rgba(42,157,143,.04))">🎭</div><div class="cch-body"><div class="cch-name">戏剧社</div><div class="cch-desc">表演、剧本、舞台制作</div><div class="cch-tags"><div class="mini-tag mini-warm">招新中</div><div class="mini-tag">低门槛</div></div></div></div>
+        <div class="club-card-h" onclick="go('s-club', {clubId:'photo'})"><div class="cch-img" style="background:linear-gradient(135deg,rgba(233,196,106,.15),rgba(244,162,97,.06))">📸</div><div class="cch-body"><div class="cch-name">摄影协会</div><div class="cch-desc">记录生活，展览作品</div><div class="cch-tags"><div class="mini-tag mini-warm">招新中</div><div class="mini-tag">中等投入</div></div></div></div>
+        <div class="club-card-h" onclick="go('s-club', {clubId:'coding'})"><div class="cch-img" style="background:linear-gradient(135deg,rgba(231,111,81,.1),rgba(244,162,97,.06))">💻</div><div class="cch-body"><div class="cch-name">计算机协会</div><div class="cch-desc">编程、竞赛、项目实战</div><div class="cch-tags"><div class="mini-tag">有门槛</div><div class="mini-tag">高投入</div></div></div></div>
+        <div class="club-card-h" onclick="go('s-club', {clubId:'green'})"><div class="cch-img" style="background:linear-gradient(135deg,rgba(42,157,143,.08),rgba(38,70,83,.04))">🌿</div><div class="cch-body"><div class="cch-name">环保公益社</div><div class="cch-desc">公益、环境、社区活动</div><div class="cch-tags"><div class="mini-tag mini-warm">招新中</div><div class="mini-tag">低门槛</div></div></div></div>
       </div>
     </div>
 
     <div class="sec" style="margin-top:18px">
       <div class="sec-hd"><div class="sec-title">📅 近期活动</div><div class="sec-more">查看全部</div></div>
-      <div class="act-card" onclick="go('s-activity')">
+      <div class="act-card" onclick="go('s-activity', {activityId:'a1'})">
         <div class="act-cover" style="background:linear-gradient(135deg,#264653,#1B3A44)">
           <span>🎭</span>
           <div class="act-cover-badge">公开演出</div>
@@ -669,7 +680,7 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
           <div class="act-meta"><span>🗓 10月20日 19:00</span><span>📍 大礼堂</span><span>🎟 免费</span></div>
         </div>
       </div>
-      <div class="act-card" onclick="go('s-activity')">
+      <div class="act-card" onclick="go('s-activity', {activityId:'a2'})">
         <div class="act-cover" style="background:linear-gradient(135deg,rgba(233,196,106,.3),rgba(244,162,97,.2))">
           <span>📷</span>
           <div class="act-cover-badge">工作坊</div>
@@ -684,15 +695,15 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
 
     <div class="sec" style="margin-top:18px">
       <div class="sec-hd"><div class="sec-title">📢 正在招新</div><div class="sec-more">查看全部</div></div>
-      <div class="recruit-card" onclick="go('s-recruit')">
+      <div class="recruit-card" onclick="go('s-recruit', {clubId:'green'})">
         <div class="recruit-emoji" style="background:rgba(42,157,143,.1)">🌿</div>
         <div style="flex:1;min-width:0"><div class="recruit-org">环保公益社</div><div class="recruit-title">2024秋季招新 · 全部门开放</div><div class="recruit-meta"><div class="recruit-deadline">⏰ 10月15日截止</div><div class="recruit-dept">宣传/活动/外联</div></div></div>
       </div>
-      <div class="recruit-card" onclick="go('s-recruit')">
+      <div class="recruit-card" onclick="go('s-recruit', {clubId:'guitar'})">
         <div class="recruit-emoji" style="background:rgba(233,196,106,.15)">🎵</div>
         <div style="flex:1;min-width:0"><div class="recruit-org">吉他社</div><div class="recruit-title">招募热爱音乐的你</div><div class="recruit-meta"><div class="recruit-deadline">⏰ 10月20日截止</div><div class="recruit-dept">零基础欢迎</div></div></div>
       </div>
-      <div class="recruit-card" onclick="go('s-recruit')">
+      <div class="recruit-card" onclick="go('s-recruit', {clubId:'debate'})">
         <div class="recruit-emoji" style="background:rgba(231,111,81,.1)">🏆</div>
         <div style="flex:1;min-width:0"><div class="recruit-org">辩论队</div><div class="recruit-title">2024年度辩手招募</div><div class="recruit-meta"><div class="recruit-deadline">⏰ 10月18日截止</div><div class="recruit-dept">需通过初试</div></div></div>
       </div>
@@ -726,19 +737,19 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
       <div class="rtab" onclick="toggleRtab(this)">招新 (3)</div>
     </div>
     <div style="padding:14px 20px">
-      <div class="recruit-card" onclick="go('s-club')">
+      <div class="recruit-card" onclick="go('s-club', {clubId:'drama'})">
         <div class="recruit-emoji" style="background:rgba(38,70,83,.08)">🎭</div>
         <div style="flex:1;min-width:0"><div class="recruit-org">艺术 · 表演</div><div class="recruit-title">校园戏剧社</div><div class="recruit-meta"><div class="mini-tag mini-warm" style="font-size:11px;padding:3px 8px">招新中</div><div class="recruit-dept">低门槛 · 每周3小时</div></div></div>
       </div>
-      <div class="recruit-card" onclick="go('s-club')">
+      <div class="recruit-card" onclick="go('s-club', {clubId:'guitar'})">
         <div class="recruit-emoji" style="background:rgba(233,196,106,.15)">🎵</div>
         <div style="flex:1;min-width:0"><div class="recruit-org">音乐 · 表演</div><div class="recruit-title">吉他社</div><div class="recruit-meta"><div class="mini-tag mini-warm" style="font-size:11px;padding:3px 8px">招新中</div><div class="recruit-dept">低门槛 · 每周2小时</div></div></div>
       </div>
-      <div class="recruit-card" onclick="go('s-club')">
+      <div class="recruit-card" onclick="go('s-club', {clubId:'broadcast'})">
         <div class="recruit-emoji" style="background:rgba(42,157,143,.1)">📻</div>
         <div style="flex:1;min-width:0"><div class="recruit-org">媒体 · 播音</div><div class="recruit-title">校园广播站</div><div class="recruit-meta"><div class="mini-tag" style="font-size:11px;padding:3px 8px">招新已结束</div><div class="recruit-dept">低门槛 · 弹性时间</div></div></div>
       </div>
-      <div class="recruit-card" onclick="go('s-club')">
+      <div class="recruit-card" onclick="go('s-club', {clubId:'literature'})">
         <div class="recruit-emoji" style="background:rgba(231,111,81,.1)">📰</div>
         <div style="flex:1;min-width:0"><div class="recruit-org">媒体 · 写作</div><div class="recruit-title">校园文学社</div><div class="recruit-meta"><div class="mini-tag mini-warm" style="font-size:11px;padding:3px 8px">招新中</div><div class="recruit-dept">低门槛 · 每周2小时</div></div></div>
       </div>
@@ -757,7 +768,7 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
       <div class="hero-top-btns">
         <div class="hero-back" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
         <div class="hero-actions">
-          <div class="hero-act" onclick="toast('❤️ 已收藏')"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+          <div class="hero-act" id="heart-btn" onclick="toggleLike(this)"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
           <div class="hero-act" onclick="toast('链接已复制')"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div>
         </div>
       </div>
@@ -816,8 +827,8 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
     </div>
 
     <div class="cta-bar">
-      <div class="btn-secondary" style="flex:1;padding:13px;font-size:13px" onclick="go('s-msg-detail')">💬 提问</div>
-      <div class="btn-primary" style="flex:2;padding:13px;font-size:13px" onclick="go('s-recruit')">📝 查看招新</div>
+      <div class="btn-secondary" style="flex:1;padding:13px;font-size:13px" onclick="go('s-msg-detail', {messageTarget: currentContext.clubId})">💬 提问</div>
+      <div class="btn-primary" style="flex:2;padding:13px;font-size:13px" onclick="go('s-recruit', {clubId: currentContext.clubId})">📝 查看招新</div>
     </div>
     <div class="pb-nav"></div>
   </div>
@@ -828,29 +839,29 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
   <div class="screen" id="s-activity" data-sb="dark">
     <div class="act-hero" style="background:linear-gradient(145deg,#264653,#1B3A44)">
       <div class="act-hero-back" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
-      🎭
+      <span class="act-emoji">🎭</span>
     </div>
     <div class="info-block" style="margin-top:0;background:var(--white)">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><span class="tag tag-coral">公开演出</span><span class="tag tag-teal">免费入场</span></div>
-      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--text);margin-bottom:6px">《等待戈多》秋季公演</div>
-      <div style="font-size:13px;color:var(--text3);margin-bottom:2px" onclick="go('s-club')" style="cursor:pointer">校园戏剧社 ›</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><span class="act-category-tag tag tag-coral">公开演出</span><span class="act-free-tag tag tag-teal">免费入场</span></div>
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--text);margin-bottom:6px" class="act-name">《等待戈多》秋季公演</div>
+      <div class="act-club-link" style="font-size:13px;color:var(--text3);margin-bottom:2px;cursor:pointer">校园戏剧社 ›</div>
     </div>
     <div class="info-block">
       <div class="ib-title">活动信息</div>
       <div class="info-grid">
-        <div class="ig-item"><div class="ig-lb">时间</div><div class="ig-val">10月20日 19:00</div></div>
-        <div class="ig-item"><div class="ig-lb">地点</div><div class="ig-val">校大礼堂</div></div>
-        <div class="ig-item"><div class="ig-lb">入场</div><div class="ig-val">免费开放</div></div>
-        <div class="ig-item"><div class="ig-lb">时长</div><div class="ig-val">约2小时</div></div>
+        <div class="ig-item"><div class="ig-lb">时间</div><div class="ig-val act-time">10月20日 19:00</div></div>
+        <div class="ig-item"><div class="ig-lb">地点</div><div class="ig-val act-venue">校大礼堂</div></div>
+        <div class="ig-item"><div class="ig-lb">入场</div><div class="ig-val act-price">免费开放</div></div>
+        <div class="ig-item"><div class="ig-lb">时长</div><div class="ig-val act-duration">约2小时</div></div>
       </div>
     </div>
     <div class="info-block">
       <div class="ib-title">活动介绍</div>
-      <div class="body-text">贝克特经典荒诞派名作《等待戈多》，由我社核心成员历经三个月排练呈现。本次演出将加入现代视觉设计元素，带来全新的观演体验。欢迎全体同学观看！</div>
+      <div class="body-text act-intro">贝克特经典荒诞派名作《等待戈多》，由我社核心成员历经三个月排练呈现。本次演出将加入现代视觉设计元素，带来全新的观演体验。欢迎全体同学观看！</div>
     </div>
     <div class="cta-bar">
       <div class="btn-secondary" style="flex:1;padding:13px;font-size:13px" onclick="toast('❤️ 已添加到日历')">收藏活动</div>
-      <div class="btn-primary" style="flex:2;padding:13px;font-size:13px" onclick="go('s-club')">查看社团主页</div>
+      <div class="btn-primary" style="flex:2;padding:13px;font-size:13px" onclick="goToActivityClub()">查看社团主页</div>
     </div>
     <div class="pb-nav"></div>
   </div>
@@ -862,10 +873,10 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
     <div class="back-row"><div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div><div class="page-title">招新详情</div></div>
     <div class="info-block" style="margin-top:14px">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-        <div style="width:52px;height:52px;border-radius:14px;background:rgba(231,111,81,.1);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🎭</div>
+        <div class="recruit-emoji" style="width:52px;height:52px;border-radius:14px;background:rgba(231,111,81,.1);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🎭</div>
         <div>
           <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text)">2024秋季招募</div>
-          <div style="font-size:13px;color:var(--text3)">校园戏剧社</div>
+          <div class="recruit-org" style="font-size:13px;color:var(--text3)">校园戏剧社</div>
         </div>
       </div>
       <div class="info-grid">
@@ -905,7 +916,7 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
       </div>
     </div>
     <div class="cta-bar">
-      <div class="btn-secondary" style="flex:1;padding:13px;font-size:13px" onclick="go('s-msg-detail')">提问</div>
+      <div class="btn-secondary" style="flex:1;padding:13px;font-size:13px" onclick="go('s-msg-detail', {messageTarget: currentContext.clubId})">提问</div>
       <div class="btn-primary" style="flex:2;padding:13px;font-size:13px" onclick="go('s-apply')">立即报名</div>
     </div>
     <div class="pb-nav"></div>
@@ -1001,6 +1012,32 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
       <div class="mq-top">
         <div class="mq-back" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
         <div class="mq-title">智能匹配</div>
+        <div class="mq-step" id="quiz-step-label">1 / 4</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="quiz-progress" style="width:25%"></div></div>
+    </div>
+    <div class="mq-body">
+      <div class="mq-glabel">兴趣方向</div>
+      <div class="mq-question">你最感兴趣的活动类型是什么？</div>
+      <div class="option-list">
+        <div class="opt" onclick="switchQuiz(1, this)"><div class="opt-emoji">🎨</div><div class="opt-text">艺术与创意（表演、美术、音乐）</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="switchQuiz(1, this)"><div class="opt-emoji">⚽</div><div class="opt-text">体育与竞技</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="switchQuiz(1, this)"><div class="opt-emoji">🔬</div><div class="opt-text">学术与研究</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="switchQuiz(1, this)"><div class="opt-emoji">🌱</div><div class="opt-text">公益与服务</div><div class="opt-check"></div></div>
+      </div>
+    </div>
+    <div class="mq-footer">
+      <div class="mq-prev" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+      <div class="mq-next" onclick="go('s-match-quiz-2')">下一步 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+    </div>
+  </div>
+
+  <!-- Quiz Question 2 -->
+  <div class="screen" id="s-match-quiz-2" data-sb="light">
+    <div class="mq-header">
+      <div class="mq-top">
+        <div class="mq-back" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+        <div class="mq-title">智能匹配</div>
         <div class="mq-step" id="quiz-step-label">2 / 4</div>
       </div>
       <div class="progress-track"><div class="progress-fill" id="quiz-progress" style="width:50%"></div></div>
@@ -1017,7 +1054,59 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
     </div>
     <div class="mq-footer">
       <div class="mq-prev" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
-      <div class="mq-next" onclick="go('s-match-result')">下一步 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      <div class="mq-next" onclick="go('s-match-quiz-3')">下一步 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+    </div>
+  </div>
+
+  <!-- Quiz Question 3 -->
+  <div class="screen" id="s-match-quiz-3" data-sb="light">
+    <div class="mq-header">
+      <div class="mq-top">
+        <div class="mq-back" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+        <div class="mq-title">智能匹配</div>
+        <div class="mq-step" id="quiz-step-label">3 / 4</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="quiz-progress" style="width:75%"></div></div>
+    </div>
+    <div class="mq-body">
+      <div class="mq-glabel">时间投入</div>
+      <div class="mq-question">你每周能投入多少时间在社团活动中？</div>
+      <div class="option-list">
+        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">🕐</div><div class="opt-text">1-2小时，仅周末参加</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">📅</div><div class="opt-text">3-5小时，参加主要活动</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">⏳</div><div class="opt-text">5小时以上，投入度高</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">🎯</div><div class="opt-text">时间灵活，按需参加</div><div class="opt-check"></div></div>
+      </div>
+    </div>
+    <div class="mq-footer">
+      <div class="mq-prev" onclick="showMatchQuestion(2)"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+      <div class="mq-next" onclick="showMatchQuestion(4)">下一步 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+    </div>
+  </div>
+
+  <!-- Quiz Question 4 -->
+  <div class="screen" id="s-match-quiz-4" data-sb="light">
+    <div class="mq-header">
+      <div class="mq-top">
+        <div class="mq-back" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+        <div class="mq-title">智能匹配</div>
+        <div class="mq-step" id="quiz-step-label">4 / 4</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="quiz-progress" style="width:100%"></div></div>
+    </div>
+    <div class="mq-body">
+      <div class="mq-glabel">参加经验</div>
+      <div class="mq-question">你是否有相关领域的参与经验？</div>
+      <div class="option-list">
+        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">🌱</div><div class="opt-text">完全零基础，想全新尝试</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">🌿</div><div class="opt-text">有一点基础或兴趣</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">🌳</div><div class="opt-text">有较多相关经验</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">🎖️</div><div class="opt-text">高手或获过奖</div><div class="opt-check"></div></div>
+      </div>
+    </div>
+    <div class="mq-footer">
+      <div class="mq-prev" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+      <div class="mq-next" onclick="go('s-match-result')">查看结果 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
     </div>
   </div>
 
@@ -1044,20 +1133,20 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
     </div>
     <div class="result-list">
       <div class="rl-title">为你推荐的社团</div>
-      <div class="rc r1" onclick="go('s-club')">
+      <div class="rc r1" onclick="go('s-club', {clubId:'drama'})">
         <div class="rc-top"><div class="rc-emoji" style="background:rgba(233,196,106,.15)">🎭</div><div class="rc-name">校园戏剧社</div><div class="rc-badge rcb-high">87%</div></div>
         <div class="rc-reason">💡 你偏好低门槛、氛围友好的表达型组织，戏剧社开放包容的文化与你的风格高度契合。</div>
-        <div class="rc-acts"><div class="rca s" onclick="event.stopPropagation();toast('❤️ 已收藏')">收藏</div><div class="rca p" onclick="event.stopPropagation();go('s-club')">查看主页 →</div></div>
+        <div class="rc-acts"><div class="rca s" onclick="event.stopPropagation();toast('❤️ 已收藏')">收藏</div><div class="rca p" onclick="event.stopPropagation();go('s-club', {clubId:'drama'})">查看主页 →</div></div>
       </div>
-      <div class="rc r2" onclick="go('s-club')">
+      <div class="rc r2" onclick="go('s-club', {clubId:'broadcast'})">
         <div class="rc-top"><div class="rc-emoji" style="background:rgba(42,157,143,.12)">📻</div><div class="rc-name">校园广播站</div><div class="rc-badge rcb-mid">79%</div></div>
         <div class="rc-reason">💡 广播站的策划和播音方向符合你的表达偏好，时间弹性，适合初入大学的你。</div>
-        <div class="rc-acts"><div class="rca s" onclick="event.stopPropagation();toast('❤️ 已收藏')">收藏</div><div class="rca p" onclick="event.stopPropagation();go('s-club')">查看主页 →</div></div>
+        <div class="rc-acts"><div class="rca s" onclick="event.stopPropagation();toast('❤️ 已收藏')">收藏</div><div class="rca p" onclick="event.stopPropagation();go('s-club', {clubId:'broadcast'})">查看主页 →</div></div>
       </div>
-      <div class="rc r3" onclick="go('s-club')">
+      <div class="rc r3" onclick="go('s-club', {clubId:'photo'})">
         <div class="rc-top"><div class="rc-emoji" style="background:rgba(38,70,83,.07)">📸</div><div class="rc-name">摄影协会</div><div class="rc-badge rcb-low">68%</div></div>
         <div class="rc-reason">💡 如果你对视觉艺术感兴趣，摄影协会是个低压力的好选择，活动频率也较灵活。</div>
-        <div class="rc-acts"><div class="rca s" onclick="event.stopPropagation();toast('❤️ 已收藏')">收藏</div><div class="rca p" onclick="event.stopPropagation();go('s-club')">查看主页 →</div></div>
+        <div class="rc-acts"><div class="rca s" onclick="event.stopPropagation();toast('❤️ 已收藏')">收藏</div><div class="rca p" onclick="event.stopPropagation();go('s-club', {clubId:'photo'})">查看主页 →</div></div>
       </div>
     </div>
     <div class="pb-nav"></div>
@@ -1294,23 +1383,23 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
       <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--text)">消息中心</div>
     </div>
     <div style="padding:14px 20px">
-      <div class="msg-item" onclick="go('s-msg-detail')">
+      <div class="msg-item" onclick="go('s-msg-detail', {messageTarget:'drama'})">
         <div class="msg-avatar" style="background:rgba(38,70,83,.08)">🎭</div>
         <div style="flex:1;min-width:0"><div class="msg-name">校园戏剧社</div><div class="msg-preview">感谢你的咨询！我们欢迎零基础同学，请放心报名…</div></div>
         <div class="msg-time">10:32</div>
       </div>
-      <div class="msg-item" onclick="go('s-msg-detail')">
+      <div class="msg-item" onclick="go('s-msg-detail', {messageTarget:'green'})">
         <div class="msg-avatar" style="background:rgba(42,157,143,.1)">🌿</div>
         <div style="flex:1;min-width:0"><div class="msg-name">环保公益社</div><div class="msg-preview">Hi！我们的宣传部特别欢迎你这样的同学…</div></div>
         <div class="msg-time">昨天</div>
         <div class="msg-unread"></div>
       </div>
-      <div class="msg-item" onclick="go('s-msg-detail')">
+      <div class="msg-item" onclick="go('s-msg-detail', {messageTarget:'broadcast'})">
         <div class="msg-avatar" style="background:rgba(233,196,106,.15)">📻</div>
         <div style="flex:1;min-width:0"><div class="msg-name">校园广播站</div><div class="msg-preview">你的问题很好！播音部不需要播音专业背景…</div></div>
         <div class="msg-time">周一</div>
       </div>
-      <div class="msg-item" onclick="go('s-msg-detail')">
+      <div class="msg-item" onclick="go('s-msg-detail', {messageTarget:'debate'})">
         <div class="msg-avatar" style="background:rgba(231,111,81,.1)">🏆</div>
         <div style="flex:1;min-width:0"><div class="msg-name">辩论队</div><div class="msg-preview">招募已截止，欢迎关注明年春季招募！</div></div>
         <div class="msg-time">上周</div>
@@ -1378,10 +1467,7 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
       <div class="ptab" onclick="switchPtab(this,'profile-tab-content','ptab-msg')">提问</div>
     </div>
     <div id="profile-tab-content">
-      <div id="ptab-fav" style="padding:14px 20px">
-        <div class="profile-list-item" onclick="go('s-club')"><div class="pli-icon" style="background:rgba(38,70,83,.07)">🎭</div><div style="flex:1;min-width:0"><div class="pli-name">校园戏剧社</div><div class="pli-meta">艺术 · 低门槛</div></div><svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
-        <div class="profile-list-item" onclick="go('s-club')"><div class="pli-icon" style="background:rgba(42,157,143,.1)">📻</div><div style="flex:1;min-width:0"><div class="pli-name">校园广播站</div><div class="pli-meta">媒体 · 弹性时间</div></div><svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
-        <div class="profile-list-item" onclick="go('s-club')"><div class="pli-icon" style="background:rgba(233,196,106,.15)">📸</div><div style="flex:1;min-width:0"><div class="pli-name">摄影协会</div><div class="pli-meta">艺术 · 中等投入</div></div><svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+      <div id="ptab-fav" style="padding:14px 20px" id="profile-favorites-container">
       </div>
       <div id="ptab-apply" style="display:none;padding:14px 20px">
         <div class="profile-list-item" onclick="go('s-apply-success')"><div class="pli-icon" style="background:rgba(38,70,83,.07)">🎭</div><div style="flex:1;min-width:0"><div class="pli-name">校园戏剧社</div><div class="pli-meta">演出部 · 10月25日截止</div></div><div class="pli-status ps-pending">待审核</div></div>
@@ -1404,6 +1490,80 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
       <svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
     </div>
     <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       E3-ADMIN — PROFILE (ADMIN)
+  ════════════════════════════ -->
+  <div class="screen" id="s-profile-admin" data-sb="dark">
+    <div class="profile-hero" style="background:linear-gradient(145deg,#1B6A5A,#0D4A3A)">
+      <div class="ph-glow"></div>
+      <div class="ph-top">
+        <div class="ph-av" style="background:linear-gradient(135deg,var(--teal),#22857a)">🏛️</div>
+        <div class="ph-settings" onclick="go('s-settings')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+      </div>
+      <div class="ph-name">校园戏剧社</div>
+      <div class="ph-bio">社团管理员 · 林晓雨 · 创建于2021年</div>
+      <div class="ph-tags"><div class="ph-tag pht1">📊 156成员</div><div class="ph-tag pht2">🎭 艺术表演</div><div class="ph-tag pht3">✨ 4.9⭐</div></div>
+    </div>
+    <div class="profile-tabs">
+      <div class="ptab on" onclick="switchPtab(this,'profile-admin-tab-content','admin-tab-overview')">概览</div>
+      <div class="ptab" onclick="switchPtab(this,'profile-admin-tab-content','admin-tab-members')">成员</div>
+      <div class="ptab" onclick="switchPtab(this,'profile-admin-tab-content','admin-tab-recruit')">招新</div>
+    </div>
+    <div id="profile-admin-tab-content">
+      <div id="admin-tab-overview" style="padding:14px 20px">
+        <div class="profile-list-item" onclick="go('s-manage')"><div class="pli-icon" style="background:rgba(42,157,143,.12);color:var(--teal)">📊</div><div style="flex:1;min-width:0"><div class="pli-name">管理仪表板</div><div class="pli-meta">查看数据统计和事务</div></div><svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+        <div class="profile-list-item" onclick="go('s-edit-club')"><div class="pli-icon" style="background:rgba(42,157,143,.12);color:var(--teal)">✏️</div><div style="flex:1;min-width:0"><div class="pli-name">编辑社团信息</div><div class="pli-meta">修改主页内容和描述</div></div><svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+        <div class="profile-list-item" onclick="go('s-faq')"><div class="pli-icon" style="background:rgba(42,157,143,.12);color:var(--teal)">💬</div><div style="flex:1;min-width:0"><div class="pli-name">留言管理</div><div class="pli-meta">回复成员提问（5条待回复）</div></div><div class="pli-status ps-pending">5待处理</div></div>
+      </div>
+      <div id="admin-tab-members" style="display:none;padding:14px 20px">
+        <div class="profile-list-item"><div class="pli-icon" style="background:rgba(38,70,83,.07)">👥</div><div style="flex:1;min-width:0"><div class="pli-name">总成员数</div><div class="pli-meta">156 人</div></div><svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+        <div class="profile-list-item"><div class="pli-icon" style="background:rgba(38,70,83,.07)">⭐</div><div style="flex:1;min-width:0"><div class="pli-name">核心成员</div><div class="pli-meta">12 人（管理团队）</div></div><svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+        <div class="profile-list-item"><div class="pli-icon" style="background:rgba(38,70,83,.07)">📈</div><div style="flex:1;min-width:0"><div class="pli-name">本月新增</div><div class="pli-meta">+23 人</div></div><svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+      </div>
+      <div id="admin-tab-recruit" style="display:none;padding:14px 20px">
+        <div class="profile-list-item" onclick="go('s-publish')"><div class="pli-icon" style="background:rgba(42,157,143,.12);color:var(--teal)">📢</div><div style="flex:1;min-width:0"><div class="pli-name">发布招新公告</div><div class="pli-meta">创建新的招新信息</div></div><svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+        <div class="profile-list-item" onclick="go('s-applications')"><div class="pli-icon" style="background:rgba(42,157,143,.12);color:var(--teal)">📋</div><div style="flex:1;min-width:0"><div class="pli-name">管理报名表</div><div class="pli-meta">当前招新期：28份待处理</div></div><div class="pli-status ps-pending">28待处理</div></div>
+      </div>
+    </div>
+    <!-- Switch back to student -->
+    <div style="margin:16px 20px;background:linear-gradient(135deg,rgba(249,115,22,.08),rgba(249,115,22,.04));border:1.5px dashed rgba(249,115,22,.3);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="go('s-profile')">
+      <div style="width:38px;height:38px;border-radius:11px;background:var(--coral);display:flex;align-items:center;justify-content:center;font-size:18px">🎓</div>
+      <div style="flex:1"><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--coral)">切换到学生身份</div><div style="font-size:12px;color:var(--text2)">查看个人报名和收藏</div></div>
+      <svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       E2-ADMIN — MSG DETAIL (ADMIN)
+  ════════════════════════════ -->
+  <div class="screen" id="s-msg-detail-admin" data-sb="light">
+    <div class="msgd-header">
+      <div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2.2" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+      <div class="msgd-avatar" style="background:rgba(38,70,83,.08)">👤</div>
+      <div style="flex:1"><div class="msgd-name">林晓雨</div><div class="msgd-status" style="color:var(--coral);font-weight:600">待回复</div></div>
+      <div onclick="toast('更多操作')" style="font-size:12px;color:var(--coral);font-weight:500;cursor:pointer">⋯</div>
+    </div>
+    <div class="msg-bubbles">
+      <div class="bubble-row">
+        <div class="bubble-av">😊</div>
+        <div class="bubble them">我想加入戏剧社，但零基础可以报名吗？参加话剧需要多少时间投入呢？</div>
+      </div>
+      <div class="bubble-row me">
+        <div class="bubble-av">🎭</div>
+        <div class="bubble me">完全可以！我们特别欢迎零基础的同学💪 热情比经验重要得多。固定每周三晚19:00-21:00排练，其他时间很灵活～</div>
+      </div>
+      <div class="bubble-row">
+        <div class="bubble-av">😊</div>
+        <div class="bubble them">太好了！什么时候可以报名？</div>
+      </div>
+    </div>
+    <div class="msg-input-bar">
+      <input class="msg-input" placeholder="输入回复…" value="">
+      <div class="msg-send" onclick="toast('消息已发送')"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>
+    </div>
   </div>
 
   <!-- ════════════════════════════
@@ -1438,6 +1598,10 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
       <div class="nv-ic"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
       <div class="nv-lb">Match</div>
     </div>
+    <div class="nv" id="nav-manage" style="display:none" onclick="navGo('s-manage','nav-manage')">
+      <div class="nv-ic"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+      <div class="nv-lb">Manage</div>
+    </div>
     <div class="nv" id="nav-messages" onclick="navGo('s-messages','nav-messages')">
       <div class="nv-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
       <div class="nv-lb">Messages</div>
@@ -1454,7 +1618,114 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
 </div><!-- /phone -->
 </div><!-- /shell -->
 
+<script src="js/clubs-data.js"></script>
+<script src="js/activities-data.js"></script>
+<script src="js/user-data.js"></script>
 <script>
+/* ═══════════════════════════════════
+   DATA STRUCTURE
+═══════════════════════════════════ */
+const DATA = {
+  clubs: {
+    'drama': {
+      id:'drama', name:'校园戏剧社', emoji:'🎭', slogan:'"让每个人都能登上舞台"', category:'🎨 艺术', 
+      members:156, history:'3年', events:12, rating:'4.9⭐',
+      founding:'2021年10月', scale:'150+', timeEnrollment:'每周3-5小时', threshold:'零基础欢迎',
+      description:'校园戏剧社致力于为热爱表演艺术的同学提供舞台。我们排演了《等待戈多》、《相见恨晚》等经典作品，参加过校园文化节和多次汇演。无论你是表演爱好者还是幕后工作者，这里都有你的位置。',
+      activities:['《等待戈多》秋季公演', '春季剧本工坊', '表演基础班'],
+      departments:['演出部', '编剧部', '舞美部', '宣传部'],
+      tags:['表演', '创意', '团队合作', '文艺'],
+      recruitment:{title:'2024秋季招募', deadline:'10月25日', departments:4, quota:30}
+    },
+    'photo': {
+      id:'photo', name:'摄影协会', emoji:'📸', slogan:'"记录生活，展览作品"', category:'🎨 艺术',
+      members:89, history:'2年', events:8, rating:'4.7⭐',
+      founding:'2022年9月', scale:'80+', timeEnrollment:'每周2-3小时', threshold:'零基础欢迎',
+      description:'摄影协会提供专业的摄影技能培训和创意分享平台。从基础构图到后期修图，我们带你发现生活中的美。每月举办采风活动和作品展览。',
+      activities:['秋日人像摄影工作坊', '校园风景采风活动', '修图技巧分享'],
+      departments:['技术部', '策划部', '宣传部'],
+      tags:['摄影', '艺术', '创意', '技能'],
+      recruitment:{title:'秋季招新-摄影爱好者', deadline:'10月20日', departments:3, quota:25}
+    },
+    'coding': {
+      id:'coding', name:'计算机协会', emoji:'💻', slogan:'"编程改变世界"', category:'🔬 学术',
+      members:124, history:'4年', events:15, rating:'4.8⭐',
+      founding:'2020年3月', scale:'120+', timeEnrollment:'每周5+小时', threshold:'有编程基础或强烈兴趣',
+      description:'计算机协会是学校最大的技术社团。我们组织编程竞赛、开源项目、技术分享会。无论是AI、Web开发还是算法优化，这里都有志同道合的伙伴。',
+      activities:['ACM编程竞赛集训', '开源项目实战', '技术分享论坛'],
+      departments:['算法部', '前端部', '后端部', '运维部'],
+      tags:['编程', '技术', '竞赛', '职业'],
+      recruitment:{title:'计算机协会新一届成员招募', deadline:'10月22日', departments:4, quota:40}
+    },
+    'green': {
+      id:'green', name:'环保公益社', emoji:'🌿', slogan:'"守护绿色地球"', category:'🌱 公益',
+      members:67, history:'1年', events:5, rating:'4.6⭐',
+      founding:'2023年10月', scale:'65+', timeEnrollment:'每周2-4小时', threshold:'有公益热心',
+      description:'环保公益社致力于推动校园可持续发展。我们组织垃圾分类活动、校园绿化、环保讲座。每参加一次活动，都在为地球做贡献。',
+      activities:['校园垃圾分类推广', '绿色宿舍建设项目', '环保知识讲座'],
+      departments:['宣传部', '项目部', '评估部'],
+      tags:['公益', '环保', '社会责任', '低投入'],
+      recruitment:{title:'环保公益社招新', deadline:'10月28日', departments:3, quota:20}
+    },
+    'guitar': {
+      id:'guitar', name:'吉他社', emoji:'🎵', slogan:'"弦音绕梦"', category:'🎨 艺术',
+      members:45, history:'2年', events:6, rating:'4.5⭐',
+      founding:'2022年5月', scale:'45+', timeEnrollment:'每周3小时', threshold:'零基础可学',
+      description:'吉他社教授吉他弹奏和音乐理论。从C调到高级指弹，从《同桌的你》到《演员》，我们的讲师会一步步教你成为吉他手。定期举办小型音乐会。',
+      activities:['初级吉他班开课', '弹唱表演会', '音乐理论工坊'],
+      departments:['教学部', '表演部', '宣传部'],
+      tags:['音乐', '乐器', '才艺', '放松'],
+      recruitment:{title:'吉他社新学员招募', deadline:'10月25日', departments:3, quota:15}
+    },
+    'broadcast': {
+      id:'broadcast', name:'校园广播站', emoji:'📻', slogan:'"声音传递温暖"', category:'💼 职业',
+      members:32, history:'5年', events:20, rating:'4.9⭐',
+      founding:'2019年9月', scale:'30+', timeEnrollment:'每周4-6小时', threshold:'有播音或编辑经验优先',
+      description:'校园广播站是学校最具影响力的媒体平台。我们制作校园新闻、主持校园人物故事、播放校园音乐。欢迎成为出镜主播或幕后制作人。',
+      activities:['新闻播报节目', '校园人物专访', '音乐推荐栏目'],
+      departments:['播音部', '编辑部', '技术部', '外联部'],
+      tags:['媒体', '表达', '传播', '职业'],
+      recruitment:{title:'校园广播站秋季主播和编辑招募', deadline:'10月15日', departments:4, quota:12}
+    },
+    'debate': {
+      id:'debate', name:'辩论队', emoji:'🏆', slogan:'"思辨引领未来"', category:'💼 职业',
+      members:28, history:'3年', events:10, rating:'4.7⭐',
+      founding:'2021年9月', scale:'28', timeEnrollment:'每周6+小时', threshold:'有辩论经验或强烈兴趣',
+      description:'校园辩论队参加各类校际辩论赛。我们打造逻辑清晰、表达有力的辩手。通过辩论，你将学会分析问题、说服他人。这是一个充满挑战和成就感的平台。',
+      activities:['校际辩论邀请赛参赛', '辩题研讨工作坊', '内部友谊赛'],
+      departments:['正方组', '反方组', '评委组', '宣传组'],
+      tags:['竞赛', '思辨', '表达', '职业'],
+      recruitment:{title:'辩论队新赛季招募', deadline:'10月20日', departments:4, quota:10}
+    },
+    'literature': {
+      id:'literature', name:'校园文学社', emoji:'📰', slogan:'"文字承载梦想"', category:'🎨 艺术',
+      members:56, history:'2年', events:4, rating:'4.6⭐',
+      founding:'2022年10月', scale:'55+', timeEnrollment:'每周2-3小时', threshold:'热爱写作',
+      description:'校园文学社是文学爱好者的精神家园。我们发布文学作品、组织诗歌朗诵会、出版校园刊物。无论是诗歌、散文还是小说，这里是展现你才华的舞台。',
+      activities:['诗歌朗诵会', '创意写作工坊', '校园文学刊物出版'],
+      departments:['创作部', '编辑部', '宣传部'],
+      tags:['文学', '写作', '创意', '表达'],
+      recruitment:{title:'文学社招新-寻找创意作者', deadline:'10月25日', departments:3, quota:18}
+    },
+  },
+  activities: {
+    'a1': {id:'a1', clubId:'drama', name:'《等待戈多》秋季公演', emoji:'🎭', category:'公开演出', free:'免费'},
+    'a2': {id:'a2', clubId:'photo', name:'秋日人像摄影工作坊', emoji:'📷', category:'工作坊', free:'有费用'},
+    'a3': {id:'a3', clubId:'broadcast', name:'秋季广播人选拔', emoji:'📻', category:'招募', free:'免费'},
+    'a4': {id:'a4', clubId:'guitar', name:'吉他初级班开课', emoji:'🎵', category:'教学', free:'有费用'},
+  },
+  user: {
+    identity: 'student', // 'student' or 'admin', store current mode
+    adminClubs: ['drama'], // clubs where user is admin
+  }
+};
+
+let currentContext = {
+  clubId: null,
+  activityId: null,
+  messageTarget: null, // which club the message is from
+};
+
 /* ═══════════════════════════════════
    NAVIGATION ENGINE
 ═══════════════════════════════════ */
@@ -1464,10 +1735,30 @@ let current = 's-welcome';
 // screens that hide bottom nav
 const NO_NAV = new Set(['s-welcome','s-apply-success']);
 // screens with dark status bar
-const DARK_SB = new Set(['s-welcome','s-club','s-match-guide','s-match-result','s-manage','s-profile']);
+const DARK_SB = new Set(['s-welcome','s-club','s-match-guide','s-match-result','s-manage','s-profile','s-profile-admin']);
 
-function go(id){
-  if(id === current) return;
+// Identity-based screen routing
+const IDENTITY_SCREENS = {
+  'student': 'nav-match', // shows Match in nav
+  'admin': 'nav-manage', // shows Manage in nav
+};
+
+function go(id, context = {}){
+  // Check if we're trying to go to the same page without new context
+  if(id === current){
+    if(!context.clubId && !context.activityId && !context.messageTarget) return;
+  }
+  
+  // Update context if provided
+  if(context.clubId) currentContext.clubId = context.clubId;
+  if(context.activityId) currentContext.activityId = context.activityId;
+  if(context.messageTarget) currentContext.messageTarget = context.messageTarget;
+  
+  // Set default values if needed
+  if((id === 's-recruit' || id === 's-msg-detail' || id === 's-apply') && !currentContext.clubId){
+    currentContext.clubId = 'drama'; // default to drama club
+  }
+  
   const from = document.getElementById(current);
   const to   = document.getElementById(id);
   if(!to) return;
@@ -1479,6 +1770,7 @@ function go(id){
   history_stack.push(id);
   current = id;
   updateChrome(id);
+  updatePageContent(id);
   to.scrollTop = 0;
 }
 
@@ -1486,6 +1778,7 @@ function back(){
   if(history_stack.length <= 1) return;
   history_stack.pop();
   const prev = history_stack[history_stack.length - 1];
+  
   const from = document.getElementById(current);
   const to   = document.getElementById(prev);
   if(!to) return;
@@ -1496,6 +1789,7 @@ function back(){
 
   current = prev;
   updateChrome(prev);
+  updatePageContent(prev);
 }
 
 function navGo(id, navId){
@@ -1507,6 +1801,349 @@ function navGo(id, navId){
   document.getElementById(navId)?.classList.add('active');
 }
 
+// Update page content based on context
+function updatePageContent(id){
+  if(id === 's-club' && currentContext.clubId){
+    updateClubPage(currentContext.clubId);
+    updateHeartButtonState(currentContext.clubId);
+  } else if(id === 's-recruit' && currentContext.clubId){
+    updateRecruitPage(currentContext.clubId);
+  } else if(id === 's-apply' && currentContext.clubId){
+    updateApplyPage(currentContext.clubId);
+  } else if(id === 's-activity' && currentContext.activityId){
+    updateActivityPage(currentContext.activityId);
+  } else if(id === 's-msg-detail' && currentContext.messageTarget){
+    updateMessagePage(currentContext.messageTarget);
+  } else if(id === 's-profile'){
+    updateProfileFavorites();
+  }
+}
+
+function updateClubPage(clubId){
+  const club = CLUBS_DB[clubId];
+  if(!club) return;
+  
+  const clubScreen = document.getElementById('s-club');
+  if(!clubScreen) return;
+  
+  // ========== 顶部信息 ==========
+  clubScreen.querySelector('.club-name-lg').textContent = club.name;
+  clubScreen.querySelector('.club-slogan').textContent = club.slogan;
+  const heroElement = clubScreen.querySelector('.club-hero-emoji');
+  if(heroElement) heroElement.textContent = club.emoji;
+  
+  // ========== 统计数据 ==========
+  const cstatVals = clubScreen.querySelectorAll('.cstat-val');
+  if(cstatVals.length >= 4){
+    cstatVals[0].textContent = club.members;
+    cstatVals[1].textContent = club.history;
+    cstatVals[2].textContent = club.events + '次';
+    cstatVals[3].textContent = club.rating;
+  }
+  
+  // ========== 匹配度 ==========
+  const matchRing = clubScreen.querySelector('.match-ring-v');
+  if(matchRing) matchRing.textContent = club.matchPercent + '%';
+  
+  // ========== 基本信息 ==========
+  const infoGrids = clubScreen.querySelectorAll('.info-grid');
+  if(infoGrids.length > 0){
+    infoGrids[0].innerHTML = `
+      <div class="ig-item"><div class="ig-lb">活动时间</div><div class="ig-val">${club.meetingTime}</div></div>
+      <div class="ig-item"><div class="ig-lb">时间投入</div><div class="ig-val">${club.timeInvestment}</div></div>
+      <div class="ig-item"><div class="ig-lb">加入门槛</div><div class="ig-val">${club.threshold}</div></div>
+      <div class="ig-item"><div class="ig-lb">规模</div><div class="ig-val">${club.scale}</div></div>
+    `;
+  }
+  
+  // ========== 标签 ==========
+  const tagGrid = clubScreen.querySelector('.tag-grid');
+  if(tagGrid){
+    tagGrid.innerHTML = club.tags.map(tag => {
+      let tagClass = 'tag-gray';
+      if(tag.includes('🎭') || tag.includes('表演') || tag.includes('创意')) tagClass = 'tag-teal';
+      else if(tag.includes('✍️') || tag.includes('创作')) tagClass = 'tag-peach';
+      else if(tag.includes('👥')) tagClass = 'tag-coral';
+      else if(tag.includes('🏆')) tagClass = 'tag-gold';
+      else if(tag.includes('型')) tagClass = 'tag-warm';
+      return `<span class="tag ${tagClass}">${tag}</span>`;
+    }).join('');
+  }
+  
+  // ========== 社团简介 ==========
+  const bodyText = clubScreen.querySelector('.body-text');
+  if(bodyText) bodyText.textContent = club.description;
+  
+  // ========== 近期招新卡片 ==========
+  const recruitCard = clubScreen.querySelector('.recruit-card');
+  if(recruitCard){
+    recruitCard.innerHTML = `
+      <div class="recruit-emoji" style="background:${club.cardBg}">${club.emoji}</div>
+      <div style="flex:1;min-width:0">
+        <div class="recruit-org">${club.name}</div>
+        <div class="recruit-title">${club.recruitment.title} · ${club.recruitment.intro}</div>
+        <div class="recruit-meta">
+          <div class="recruit-deadline">⏰ ${club.recruitment.deadline}截止</div>
+          <div class="recruit-dept">${club.departments.join('/')}</div>
+        </div>
+      </div>
+    `;
+    recruitCard.onclick = () => go('s-recruit', {clubId: clubId});
+  }
+  
+  // ========== 更新英雄背景颜色 ==========
+  const heroDiv = clubScreen.querySelector('.club-hero');
+  if(heroDiv) heroDiv.style.background = club.heroGradient;
+  
+  // ========== 按钮事件 ==========
+  const ctaBar = clubScreen.querySelector('.cta-bar');
+  if(ctaBar){
+    const buttons = ctaBar.querySelectorAll('[class*="btn-"]');
+    if(buttons.length >= 2){
+      buttons[0].onclick = () => go('s-msg-detail', {messageTarget: clubId});
+      buttons[1].onclick = () => go('s-recruit', {clubId: clubId});
+    }
+  }
+}
+
+function updateActivityPage(activityId){
+  console.log('updateActivityPage called with:', activityId);
+  console.log('ACTIVITIES_DB available?', typeof ACTIVITIES_DB !== 'undefined');
+  
+  if(typeof ACTIVITIES_DB === 'undefined'){
+    console.error('ACTIVITIES_DB is not defined!');
+    return;
+  }
+  
+  const activity = ACTIVITIES_DB[activityId];
+  console.log('Activity found:', activity);
+  
+  if(!activity){
+    console.error('Activity not found for id:', activityId);
+    return;
+  }
+  
+  const club = CLUBS_DB[activity.clubId];
+  const actScreen = document.getElementById('s-activity');
+  if(!actScreen){
+    console.error('s-activity screen not found');
+    return;
+  }
+  
+  console.log('Updating activity page with:', activity.name);
+  
+  // ========== 顶部emoji和背景 ==========
+  const heroEl = actScreen.querySelector('.act-hero');
+  const emojiEl = actScreen.querySelector('.act-emoji');
+  if(heroEl && emojiEl){
+    heroEl.style.background = activity.heroGradient;
+    emojiEl.textContent = activity.emoji;
+  }
+  
+  // ========== 标签 ==========
+  const categoryTag = actScreen.querySelector('.act-category-tag');
+  const freeTag = actScreen.querySelector('.act-free-tag');
+  if(categoryTag) categoryTag.textContent = activity.category;
+  if(freeTag) freeTag.textContent = activity.free === '免费' ? '免费入场' : '收费活动';
+  
+  // ========== 标题 ==========
+  const nameEl = actScreen.querySelector('.act-name');
+  if(nameEl) nameEl.textContent = activity.name;
+  
+  // ========== 社团链接 ==========
+  const clubLink = actScreen.querySelector('.act-club-link');
+  if(clubLink){
+    clubLink.textContent = (club ? club.name : '社团') + ' ›';
+    clubLink.onclick = () => go('s-club', {clubId: activity.clubId});
+  }
+  
+  // ========== 活动信息 ==========
+  const timeEl = actScreen.querySelector('.act-time');
+  const venueEl = actScreen.querySelector('.act-venue');
+  const priceEl = actScreen.querySelector('.act-price');
+  const durationEl = actScreen.querySelector('.act-duration');
+  
+  if(timeEl) timeEl.textContent = activity.time;
+  if(venueEl) venueEl.textContent = activity.venue;
+  if(priceEl) priceEl.textContent = activity.free === '免费' ? '免费开放' : activity.price || '详情咨询';
+  if(durationEl) durationEl.textContent = activity.duration;
+  
+  // ========== 活动介绍 ==========
+  const introEl = actScreen.querySelector('.act-intro');
+  if(introEl) introEl.textContent = activity.intro;
+  
+  console.log('Activity page update complete');
+}
+
+function goToActivityClub(){
+  if(currentContext.activityId){
+    const activity = ACTIVITIES_DB[currentContext.activityId];
+    if(activity){
+      go('s-club', {clubId: activity.clubId});
+    }
+  }
+}
+
+function updateMessagePage(clubId){
+  const club = CLUBS_DB[clubId];
+  if(!club) return;
+  
+  const msgScreen = document.getElementById('s-msg-detail');
+  if(msgScreen){
+    msgScreen.querySelector('.msgd-avatar').textContent = club.emoji;
+    msgScreen.querySelector('.msgd-name').textContent = club.name;
+  }
+}
+
+function updateHeartButtonState(clubId){
+  const heartBtn = document.getElementById('heart-btn');
+  if(!heartBtn) return;
+  
+  if(USER_DATA.isLiked(clubId)){
+    heartBtn.classList.add('liked');
+  } else {
+    heartBtn.classList.remove('liked');
+  }
+}
+
+function updateProfileFavorites(){
+  const container = document.getElementById('ptab-fav') || document.getElementById('profile-favorites-container');
+  if(!container) return;
+  
+  const likedClubIds = USER_DATA.getLikedClubs();
+  
+  if(likedClubIds.length === 0){
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3)">还没有收藏任何社团<br><span style="font-size:12px">在社团详情页点击爱心可收藏</span></div>';
+    return;
+  }
+  
+  container.innerHTML = likedClubIds.map(clubId => {
+    const club = CLUBS_DB[clubId];
+    if(!club) return '';
+    
+    return `<div class="profile-list-item" onclick="go('s-club', {clubId:'${clubId}'})">
+      <div class="pli-icon" style="background:${club.cardBg}20">${club.emoji}</div>
+      <div style="flex:1;min-width:0">
+        <div class="pli-name">${club.name}</div>
+        <div class="pli-meta">${club.category} · ${club.timeInvestment}</div>
+      </div>
+      <svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+    </div>`;
+  }).join('');
+}
+
+function updateRecruitPage(clubId){
+  const club = CLUBS_DB[clubId];
+  if(!club || !club.recruitment) return;
+  
+  const recruitScreen = document.getElementById('s-recruit');
+  if(!recruitScreen) return;
+  
+  // ========== 顶部emoji和社团名称 ==========
+  const headerEls = recruitScreen.querySelectorAll('.recruit-emoji');
+  const orgEls = recruitScreen.querySelectorAll('.recruit-org');
+  
+  headerEls.forEach(el => {
+    el.textContent = club.emoji;
+    el.style.background = club.cardBg;
+  });
+  orgEls.forEach(el => el.textContent = club.name);
+  
+  // ========== 招新标题 ==========
+  const titleEl = recruitScreen.querySelector('div[style*="font-size:18px"]');
+  if(titleEl) titleEl.textContent = club.recruitment.title;
+  
+  // ========== 招新信息网格 ==========
+  const infoGrids = recruitScreen.querySelectorAll('.info-grid');
+  if(infoGrids.length > 0) {
+    const deptText = club.recruitment.departments === 0 
+      ? '不分部门' 
+      : `${club.recruitment.departments}个部门`;
+    
+    infoGrids[0].innerHTML = `
+      <div class="ig-item"><div class="ig-lb">截止日期</div><div class="ig-val" style="color:var(--coral);font-weight:600">${club.recruitment.deadline}</div></div>
+      <div class="ig-item"><div class="ig-lb">招募方向</div><div class="ig-val">${deptText}</div></div>
+      <div class="ig-item"><div class="ig-lb">门槛要求</div><div class="ig-val">${club.threshold}</div></div>
+      <div class="ig-item"><div class="ig-lb">招募人数</div><div class="ig-val">约${club.recruitment.quota}人</div></div>
+    `;
+  }
+  
+  // ========== 开放部门（如果有的话） ==========
+  const infoBlocks = recruitScreen.querySelectorAll('.info-block');
+  let deptBlock = null;
+  let processBlock = null;
+  
+  infoBlocks.forEach(block => {
+    const title = block.querySelector('.ib-title');
+    if(title && title.textContent.includes('开放部门')) {
+      deptBlock = block;
+    }
+    if(title && title.textContent.includes('招募流程')) {
+      processBlock = block;
+    }
+  });
+  
+  // 更新部门卡片
+  if(club.recruitment.departmentDetails && Object.keys(club.recruitment.departmentDetails).length > 0) {
+    if(deptBlock) {
+      const deptContainer = deptBlock.querySelector('div[style*="flex-direction:column"]');
+      if(deptContainer) {
+        deptContainer.innerHTML = Object.entries(club.recruitment.departmentDetails).map(([dept, desc]) => 
+          `<div style="background:var(--off);border-radius:12px;padding:12px 14px">
+            <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">🎯 ${dept}</div>
+            <div style="font-size:12px;color:var(--text2)">${desc}</div>
+          </div>`
+        ).join('');
+      }
+    }
+  }
+  
+  // 更新招募流程
+  if(club.recruitment.process && processBlock) {
+    const processContainer = processBlock.querySelector('div[style*="flex-direction:column"]');
+    if(processContainer) {
+      processContainer.innerHTML = club.recruitment.process.map(p =>
+        `<div style="display:flex;gap:10px;align-items:center">
+          <div style="width:24px;height:24px;border-radius:50%;background:var(${
+            p.step === 1 ? '--coral' : p.step === 2 ? '--peach' : '--teal'
+          });color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${p.step}</div>
+          <div style="font-size:13px;color:var(--text)">${p.text}（${p.deadline}）</div>
+        </div>`
+      ).join('');
+    }
+  }
+  
+  // ========== 更新按钮事件 ==========
+  const ctaBar = recruitScreen.querySelector('.cta-bar');
+  if(ctaBar){
+    const buttons = ctaBar.querySelectorAll('[class*="btn-"]');
+    if(buttons.length >= 2){
+      buttons[0].onclick = () => go('s-msg-detail', {messageTarget: clubId});
+      buttons[1].onclick = () => go('s-apply', {clubId: clubId});
+    }
+  }
+}
+
+function updateApplyPage(clubId){
+  const club = CLUBS_DB[clubId];
+  if(!club || !club.recruitment) return;
+  
+  const applyScreen = document.getElementById('s-apply');
+  if(!applyScreen) return;
+  
+  // 更新目标社团信息
+  const applyHeadEmoji = applyScreen.querySelector('.apply-target-emoji');
+  const applyHeadName = applyScreen.querySelector('.apply-target-name');
+  const applyHeadSub = applyScreen.querySelector('.apply-target-sub');
+  
+  if(applyHeadEmoji) {
+    applyHeadEmoji.textContent = club.emoji;
+    applyHeadEmoji.parentElement.style.background = club.cardBg;
+  }
+  if(applyHeadName) applyHeadName.textContent = club.recruitment.title;
+  if(applyHeadSub) applyHeadSub.textContent = club.name;
+}
+
 function updateChrome(id){
   const sb = document.getElementById('statusbar');
   const bn = document.getElementById('bottomnav');
@@ -1516,15 +2153,28 @@ function updateChrome(id){
   // bottom nav
   if(NO_NAV.has(id)){ bn.style.display='none'; }
   else { bn.style.display='flex'; }
+  
+  // Show/hide nav-match and nav-manage based on current screen
+  const adminScreens = ['s-manage','s-edit-club','s-publish','s-applications','s-stats','s-faq','s-profile-admin'];
+  const navMatch = document.getElementById('nav-match');
+  const navManage = document.getElementById('nav-manage');
+  if(adminScreens.includes(id)){
+    navMatch.style.display='none';
+    navManage.style.display='flex';
+  } else {
+    navMatch.style.display='flex';
+    navManage.style.display='none';
+  }
+  
   // nav active state
   const navMap = {
     's-explore':'nav-explore','s-search':'nav-explore','s-club':'nav-explore',
     's-activity':'nav-explore','s-recruit':'nav-explore','s-apply':'nav-explore','s-apply-success':'nav-explore',
-    's-match-guide':'nav-match','s-match-quiz':'nav-match','s-match-result':'nav-match',
-    's-messages':'nav-messages','s-msg-detail':'nav-messages',
-    's-profile':'nav-profile','s-settings':'nav-profile',
-    's-manage':'nav-match','s-edit-club':'nav-match','s-publish':'nav-match',
-    's-applications':'nav-match','s-stats':'nav-match','s-faq':'nav-match',
+    's-match-guide':'nav-match','s-match-quiz':'nav-match','s-match-quiz-2':'nav-match','s-match-quiz-3':'nav-match','s-match-quiz-4':'nav-match','s-match-result':'nav-match',
+    's-messages':'nav-messages','s-msg-detail':'nav-messages','s-msg-detail-admin':'nav-messages',
+    's-profile':'nav-profile','s-settings':'nav-profile','s-profile-admin':'nav-profile',
+    's-manage':'nav-manage','s-edit-club':'nav-manage','s-publish':'nav-manage',
+    's-applications':'nav-manage','s-stats':'nav-manage','s-faq':'nav-manage',
   };
   const navId = navMap[id];
   document.querySelectorAll('.nv').forEach(n=>n.classList.remove('active'));
@@ -1543,11 +2193,33 @@ function toast(msg){
   toastTimer = setTimeout(()=>el.classList.remove('show'), 2000);
 }
 
+function toggleLike(btn){
+  const clubId = currentContext.clubId;
+  if(!clubId) return;
+  
+  const isNowLiked = USER_DATA.toggleLike(clubId);
+  
+  if(isNowLiked){
+    btn.classList.add('liked');
+    toast('❤️ 已收藏');
+  } else {
+    btn.classList.remove('liked');
+    toast('❌ 已取消收藏');
+  }
+  
+  // 更新个人主页收藏列表
+  updateProfileFavorites();
+}
+
 /* ═══════════════════════════════════
    MICRO INTERACTIONS
 ═══════════════════════════════════ */
 function toggleOpt(el){
   el.classList.toggle('on');
+}
+function switchQuiz(questionNum, el){
+  el.closest('.option-list').querySelectorAll('.opt').forEach(o=>o.classList.remove('on'));
+  el.classList.add('on');
 }
 function toggleFilter(el){
   el.closest('.filter-row, [style]').querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('on'));
@@ -1567,6 +2239,33 @@ function switchPtab(el, containerId, showId){
   const container = document.getElementById(containerId);
   container.querySelectorAll('[id^="ptab-"]').forEach(d=>d.style.display='none');
   document.getElementById(showId).style.display='block';
+}
+
+// Filter clubs by category
+function filterByCategory(category, el){
+  // Update chip states
+  document.querySelectorAll('#category-filter .chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  
+  // Get hscroll container
+  const hscroll = document.querySelector('.sec .hscroll');
+  if(!hscroll) return;
+  
+  // Filter all club cards in the hscroll
+  hscroll.querySelectorAll('.club-card-h').forEach(card => {
+    const clubName = card.querySelector('.cch-name').textContent;
+    const clubId = Object.values(DATA.clubs).find(c => c.name === clubName)?.id;
+    
+    if(!clubId) return;
+    const club = DATA.clubs[clubId];
+    
+    if(category === null || club.category === category){
+      card.style.display = 'flex';
+      card.style.opacity = '1';
+    } else {
+      card.style.display = 'none';
+    }
+  });
 }
 
 /* initial chrome */
