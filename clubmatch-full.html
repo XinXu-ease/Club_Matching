@@ -1,0 +1,1577 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClubMatch — 完整原型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════
+   TOKENS & RESET
+═══════════════════════════════════ */
+:root {
+  --dark:#264653; --teal:#2A9D8F; --gold:#E9C46A;
+  --peach:#F4A261; --coral:#E76F51;
+  --white:#FFFFFF; --off:#FAFAF8; --light:#F2F0EB;
+  --mid:#C8C4B8; --text:#1A2E35; --text2:#4A5E65; --text3:#8A9DA5;
+  --nav-h:76px; --status-h:44px;
+  --phone-w:390px; --phone-h:844px;
+  --radius:20px;
+  --shadow:0 32px 72px rgba(38,70,83,.18),0 6px 20px rgba(38,70,83,.10);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8E4D8;overflow:hidden}
+
+/* ═══════════════════════════════════
+   OUTER SHELL — single phone centered
+═══════════════════════════════════ */
+#shell {
+  width:100%; height:100%;
+  display:flex; align-items:center; justify-content:center;
+}
+#phone {
+  width:var(--phone-w); height:var(--phone-h);
+  background:var(--white); border-radius:44px;
+  overflow:hidden; position:relative;
+  box-shadow:var(--shadow);
+  flex-shrink:0;
+}
+
+/* ── status bar ── */
+#statusbar {
+  position:absolute; top:0; left:0; right:0;
+  height:var(--status-h); z-index:200;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 22px;
+  transition: background .3s, color .3s;
+}
+#statusbar .time{font-weight:600;font-size:15px}
+#statusbar .icons{display:flex;gap:5px;align-items:center}
+#statusbar .icons svg{width:16px;height:16px}
+.sb-light{background:var(--white);color:var(--text)}
+.sb-dark {background:transparent;color:var(--white)}
+.sb-dark .icons svg{fill:white;stroke:white}
+.sb-light .icons svg{fill:var(--text);stroke:var(--text)}
+
+/* ── bottom nav ── */
+#bottomnav {
+  position:absolute; bottom:0; left:0; right:0;
+  height:var(--nav-h); z-index:200;
+  background:rgba(255,255,255,.95);
+  backdrop-filter:blur(16px);
+  border-top:1px solid rgba(38,70,83,.07);
+  display:flex; align-items:flex-start; padding-top:8px;
+}
+.nv{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding-top:2px}
+.nv-ic{width:24px;height:24px;display:flex;align-items:center;justify-content:center}
+.nv-ic svg{width:22px;height:22px;fill:none;stroke:var(--mid);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:.2s}
+.nv-lb{font-size:10px;font-weight:500;color:var(--text3);letter-spacing:.02em;transition:.2s}
+.nv.active .nv-ic svg{stroke:var(--coral)}
+.nv.active .nv-lb{color:var(--coral);font-weight:600}
+
+/* ── screen container ── */
+#screens {
+  position:absolute;
+  top:var(--status-h); left:0; right:0;
+  bottom:var(--nav-h);
+  overflow:hidden;
+}
+.screen {
+  position:absolute; inset:0;
+  overflow-y:auto; overflow-x:hidden;
+  scrollbar-width:none;
+  opacity:0; pointer-events:none;
+  transform:translateX(30px);
+  transition:opacity .25s ease, transform .25s ease;
+  background:var(--off);
+}
+.screen::-webkit-scrollbar{display:none}
+.screen.active{opacity:1;pointer-events:all;transform:translateX(0)}
+.screen.slide-back{transform:translateX(-30px)}
+
+/* screens that need no bottom nav */
+.screen.no-nav ~ #bottomnav{display:none}
+
+/* ═══════════════════════════════════
+   SHARED COMPONENTS
+═══════════════════════════════════ */
+.h1{font-family:'Syne',sans-serif;font-weight:800}
+.h2{font-family:'Syne',sans-serif;font-weight:700}
+.h3{font-family:'Syne',sans-serif;font-weight:600}
+
+/* back button */
+.back-row{display:flex;align-items:center;gap:10px;padding:12px 20px 0}
+.back-btn{width:36px;height:36px;border-radius:50%;background:var(--light);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.back-btn svg{width:16px;height:16px;stroke:var(--text);fill:none;stroke-width:2.2;stroke-linecap:round}
+.page-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text)}
+
+/* chips */
+.chip-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:0 20px 2px}
+.chip-row::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;transition:.15s}
+.chip.on{background:var(--coral);color:#fff}
+.chip.off{background:var(--white);color:var(--text2);border:1.5px solid rgba(38,70,83,.1)}
+
+/* cards */
+.card{background:var(--white);border-radius:var(--radius);overflow:hidden;box-shadow:0 2px 12px rgba(38,70,83,.07)}
+
+/* section */
+.sec{padding:20px 20px 0}
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sec-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--text)}
+.sec-more{font-size:12px;color:var(--coral);font-weight:500;cursor:pointer}
+
+/* tags */
+.tag{display:inline-block;padding:4px 10px;border-radius:9px;font-size:11px;font-weight:500}
+.tag-teal{background:rgba(42,157,143,.12);color:var(--teal)}
+.tag-peach{background:rgba(244,162,97,.15);color:#c07930}
+.tag-coral{background:rgba(231,111,81,.12);color:var(--coral)}
+.tag-gold{background:rgba(233,196,106,.2);color:#9a7a1a}
+.tag-gray{background:var(--light);color:var(--text2)}
+.tag-warm{background:rgba(244,162,97,.18);color:var(--coral)}
+
+/* buttons */
+.btn-primary{background:linear-gradient(135deg,var(--peach),var(--coral));color:#fff;border:none;border-radius:14px;font-family:'Syne',sans-serif;font-weight:700;cursor:pointer;text-align:center}
+.btn-secondary{background:transparent;border:1.5px solid rgba(38,70,83,.15);border-radius:14px;font-family:'Syne',sans-serif;font-weight:700;color:var(--text2);cursor:pointer;text-align:center}
+.btn-teal{background:linear-gradient(135deg,var(--teal),#22857a);color:#fff;border:none;border-radius:14px;font-family:'Syne',sans-serif;font-weight:700;cursor:pointer;text-align:center}
+
+/* cta bar */
+.cta-bar{padding:12px 20px;background:var(--white);border-top:1px solid rgba(38,70,83,.07);display:flex;gap:10px}
+
+/* hero dark */
+.dark-hero{background:linear-gradient(145deg,var(--dark) 0%,#1B3A44 100%);position:relative;overflow:hidden}
+.dark-hero .glow1{position:absolute;right:-30px;top:-30px;width:160px;height:160px;background:radial-gradient(circle,rgba(42,157,143,.25) 0%,transparent 70%);border-radius:50%}
+.dark-hero .glow2{position:absolute;left:-20px;bottom:-20px;width:120px;height:120px;background:radial-gradient(circle,rgba(233,196,106,.18) 0%,transparent 70%);border-radius:50%}
+
+/* form fields */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+.field input,.field textarea,.field select{width:100%;padding:12px 14px;border-radius:13px;border:1.5px solid rgba(38,70,83,.12);background:var(--off);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none}
+.field textarea{resize:none;min-height:80px}
+
+/* recruit card */
+.recruit-card{background:var(--white);border-radius:16px;padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 2px 10px rgba(38,70,83,.06);cursor:pointer}
+.recruit-emoji{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.recruit-org{font-size:11px;color:var(--text3);font-weight:500;margin-bottom:2px}
+.recruit-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:5px}
+.recruit-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.recruit-deadline{font-size:11px;color:var(--coral);font-weight:600}
+.recruit-dept{font-size:11px;color:var(--text3)}
+
+/* ── scroll padding ── */
+.pb-nav{height:20px}
+
+/* ── toast ── */
+#toast{position:absolute;bottom:calc(var(--nav-h)+16px);left:50%;transform:translateX(-50%) translateY(16px);background:var(--dark);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;white-space:nowrap;z-index:999;opacity:0;transition:.25s ease;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── page transition overlay ── */
+#overlay{position:absolute;inset:0;background:rgba(255,255,255,0);z-index:500;pointer-events:none;transition:background .15s}
+
+/* ═══════════════════════════════════
+   A — WELCOME
+═══════════════════════════════════ */
+#s-welcome{background:var(--dark)}
+.wlc-shapes{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.wlc-c1{position:absolute;width:320px;height:320px;background:radial-gradient(circle,rgba(42,157,143,.22) 0%,transparent 70%);top:-90px;right:-70px;border-radius:50%}
+.wlc-c2{position:absolute;width:200px;height:200px;background:radial-gradient(circle,rgba(233,196,106,.18) 0%,transparent 70%);bottom:140px;left:-50px;border-radius:50%}
+.wlc-dots{position:absolute;top:70px;left:22px;opacity:.12;background-image:radial-gradient(circle,#E9C46A 1.5px,transparent 1.5px);background-size:20px 20px;width:120px;height:120px}
+.wlc-inner{position:relative;z-index:1;padding:60px 24px 0}
+.wlc-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(42,157,143,.2);border:1px solid rgba(42,157,143,.35);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;color:var(--teal);letter-spacing:.08em;text-transform:uppercase;margin-bottom:22px}
+.wlc-dot{width:6px;height:6px;background:var(--teal);border-radius:50%;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.7)}}
+.wlc-h{font-family:'Syne',sans-serif;font-size:38px;font-weight:800;line-height:1.1;color:#fff;margin-bottom:16px}
+.wlc-h .acc{color:var(--gold)}
+.wlc-sub{font-size:15px;font-weight:300;color:rgba(255,255,255,.5);line-height:1.6;max-width:280px;margin-bottom:36px}
+.role-cards{display:flex;flex-direction:column;gap:12px;padding:0 24px}
+.role-card{border-radius:20px;padding:22px;cursor:pointer;position:relative;overflow:hidden;transition:transform .2s}
+.role-card:active{transform:scale(.97)}
+.role-card.fresh{background:linear-gradient(135deg,var(--peach) 0%,var(--coral) 100%)}
+.role-card.club{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12)}
+.role-icon{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:14px}
+.role-card.club .role-icon{background:rgba(255,255,255,.1)}
+.role-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:4px}
+.role-desc{font-size:13px;font-weight:300;color:rgba(255,255,255,.7);line-height:1.5}
+.role-arr{position:absolute;right:20px;top:50%;transform:translateY(-50%);width:32px;height:32px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.role-arr svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round}
+.wlc-guest{text-align:center;font-size:13px;color:rgba(255,255,255,.38);cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:20px 0 30px;position:relative;z-index:1}
+
+/* ═══════════════════════════════════
+   B1 — EXPLORE
+═══════════════════════════════════ */
+#s-explore{background:var(--off)}
+.exp-header{background:var(--white);padding:14px 20px 18px;border-bottom:1px solid rgba(38,70,83,.06)}
+.exp-toprow{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.exp-greet{font-size:13px;color:var(--text3);margin-bottom:2px}
+.exp-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--text)}
+.exp-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--peach),var(--coral));display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
+.search-bar{display:flex;align-items:center;gap:10px;background:var(--light);border-radius:13px;padding:10px 14px;cursor:pointer}
+.search-bar svg{width:17px;height:17px;stroke:var(--text3);fill:none;stroke-width:2;stroke-linecap:round;flex-shrink:0}
+.search-bar span{font-size:14px;color:var(--text3);font-weight:300}
+.match-banner{margin:14px 20px;background:linear-gradient(135deg,var(--dark) 0%,#1e3a44 100%);border-radius:20px;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;overflow:hidden;position:relative;cursor:pointer}
+.match-banner::before{content:'';position:absolute;right:-20px;top:-20px;width:100px;height:100px;background:radial-gradient(circle,rgba(42,157,143,.3) 0%,transparent 70%);border-radius:50%}
+.mbanner-lbl{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:4px}
+.mbanner-ttl{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#fff;line-height:1.3;max-width:170px}
+.mbanner-btn{background:var(--gold);color:var(--dark);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;padding:9px 14px;border-radius:18px;white-space:nowrap;cursor:pointer;position:relative;z-index:1;flex-shrink:0}
+
+/* horizontal club cards */
+.hscroll{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+.hscroll::-webkit-scrollbar{display:none}
+.club-card-h{flex-shrink:0;width:148px;background:var(--white);border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(38,70,83,.07);cursor:pointer}
+.cch-img{height:88px;display:flex;align-items:center;justify-content:center;font-size:30px}
+.cch-body{padding:10px 12px 12px}
+.cch-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
+.cch-desc{font-size:11px;color:var(--text3);line-height:1.4;margin-bottom:7px}
+.cch-tags{display:flex;gap:4px;flex-wrap:wrap}
+.mini-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:var(--light);color:var(--text2);font-weight:500}
+.mini-warm{background:rgba(244,162,97,.15);color:var(--coral)}
+
+/* activity cards */
+.act-card{background:var(--white);border-radius:16px;overflow:hidden;margin-bottom:10px;box-shadow:0 2px 10px rgba(38,70,83,.06);cursor:pointer}
+.act-cover{height:110px;display:flex;align-items:center;justify-content:center;font-size:40px;position:relative}
+.act-cover-badge{position:absolute;top:10px;left:10px;background:rgba(38,70,83,.7);color:#fff;font-size:10px;font-weight:600;padding:3px 8px;border-radius:8px;letter-spacing:.04em}
+.act-body{padding:12px 14px}
+.act-org{font-size:11px;color:var(--text3);margin-bottom:2px}
+.act-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px}
+.act-meta{display:flex;gap:8px;flex-wrap:wrap}
+.act-meta span{font-size:11px;color:var(--text2)}
+
+/* ═══════════════════════════════════
+   B2 — SEARCH
+═══════════════════════════════════ */
+#s-search{background:var(--off)}
+.search-header{background:var(--white);padding:14px 20px 16px;border-bottom:1px solid rgba(38,70,83,.06)}
+.search-input-row{display:flex;align-items:center;gap:10px}
+.search-input-wrap{flex:1;display:flex;align-items:center;gap:9px;background:var(--light);border-radius:13px;padding:10px 14px}
+.search-input-wrap svg{width:16px;height:16px;stroke:var(--text3);fill:none;stroke-width:2;stroke-linecap:round;flex-shrink:0}
+.search-input-wrap input{border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;width:100%}
+.search-cancel{font-size:14px;color:var(--coral);font-weight:500;cursor:pointer;white-space:nowrap}
+.filter-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:12px 20px 0}
+.filter-row::-webkit-scrollbar{display:none}
+.filter-pill{flex-shrink:0;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;background:var(--white);color:var(--text2);border:1.5px solid rgba(38,70,83,.1)}
+.filter-pill.on{background:var(--dark);color:#fff;border-color:var(--dark)}
+.result-tabs{display:flex;gap:0;border-bottom:1px solid rgba(38,70,83,.07);background:var(--white);padding:0 20px;margin-bottom:0}
+.rtab{flex:1;text-align:center;padding:11px 0;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;position:relative}
+.rtab.on{color:var(--coral)}
+.rtab.on::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:2px;background:var(--coral);border-radius:2px 2px 0 0}
+
+/* ═══════════════════════════════════
+   B4 — CLUB MAIN PAGE
+═══════════════════════════════════ */
+#s-club{background:var(--off)}
+.club-hero{height:210px;position:relative;display:flex;align-items:flex-end;padding:0 20px 20px;overflow:hidden}
+.club-hero-bg{position:absolute;inset:0;background:linear-gradient(145deg,var(--dark) 0%,#1B3A44 100%)}
+.club-hero-pattern{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(42,157,143,.1) 1px,transparent 1px);background-size:24px 24px}
+.club-hero-emoji{position:absolute;right:24px;top:34px;font-size:76px;opacity:.85}
+.hero-top-btns{position:absolute;top:14px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:center}
+.hero-back{width:32px;height:32px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.hero-back svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round}
+.hero-actions{display:flex;gap:8px}
+.hero-act{width:32px;height:32px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.hero-act svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round}
+.club-verified{display:inline-flex;align-items:center;gap:4px;background:rgba(42,157,143,.25);border:1px solid rgba(42,157,143,.4);padding:3px 8px;border-radius:10px;font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.club-name-lg{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#fff;margin-bottom:2px;position:relative;z-index:1}
+.club-slogan{font-size:13px;color:rgba(255,255,255,.55);font-style:italic;position:relative;z-index:1}
+.club-stats-row{background:var(--white);display:flex;border-bottom:1px solid rgba(38,70,83,.06)}
+.cstat{flex:1;padding:14px 0;text-align:center;border-right:1px solid rgba(38,70,83,.06)}
+.cstat:last-child{border-right:none}
+.cstat-val{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text);margin-bottom:2px}
+.cstat-lb{font-size:10px;color:var(--text3);font-weight:500}
+.match-bar{margin:14px 20px;background:linear-gradient(90deg,rgba(233,196,106,.12),rgba(244,162,97,.08));border:1.5px solid rgba(233,196,106,.38);border-radius:14px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.match-ring-wrap{display:flex;align-items:center;gap:10px}
+.match-ring{width:44px;height:44px;border-radius:50%;background:conic-gradient(var(--gold) 0% 87%,var(--light) 87% 100%);display:flex;align-items:center;justify-content:center;position:relative}
+.match-ring::after{content:'';position:absolute;width:32px;height:32px;background:#fff;border-radius:50%}
+.match-ring-v{font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:var(--text);position:relative;z-index:1}
+.match-desc-t{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
+.match-desc-s{font-size:11px;color:var(--text2)}
+.match-why{font-size:12px;font-weight:600;color:var(--coral);cursor:pointer}
+.club-tabs{display:flex;background:var(--white);border-bottom:1px solid rgba(38,70,83,.07);padding:0 20px}
+.ctab{flex:1;text-align:center;padding:12px 0;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;position:relative;letter-spacing:.02em}
+.ctab.on{color:var(--coral)}
+.ctab.on::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:2px;background:var(--coral);border-radius:2px 2px 0 0}
+.info-block{padding:16px 20px;background:var(--white);margin-bottom:8px}
+.ib-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px;text-transform:uppercase;letter-spacing:.07em}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ig-item{}
+.ig-lb{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+.ig-val{font-size:13px;color:var(--text)}
+.tag-grid{display:flex;gap:6px;flex-wrap:wrap}
+.body-text{font-size:13px;color:var(--text2);line-height:1.7}
+
+/* ═══════════════════════════════════
+   B5 — ACTIVITY DETAIL
+═══════════════════════════════════ */
+#s-activity{background:var(--off)}
+.act-hero{height:180px;display:flex;align-items:center;justify-content:center;font-size:64px;position:relative}
+.act-hero-bg{position:absolute;inset:0}
+.act-hero-back{position:absolute;top:14px;left:16px;width:32px;height:32px;background:rgba(0,0,0,.25);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.act-hero-back svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round}
+
+/* ═══════════════════════════════════
+   B6 — RECRUIT DETAIL
+═══════════════════════════════════ */
+#s-recruit{background:var(--off)}
+
+/* ═══════════════════════════════════
+   B7 — APPLY
+═══════════════════════════════════ */
+#s-apply{background:var(--off)}
+.apply-head{background:var(--white);padding:14px 20px 18px;border-bottom:1px solid rgba(38,70,83,.06)}
+.apply-target{display:flex;align-items:center;gap:12px;background:var(--light);border-radius:14px;padding:12px 14px}
+.apply-target-emoji{font-size:26px}
+.apply-target-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px}
+.apply-target-sub{font-size:12px;color:var(--text3)}
+
+/* ═══════════════════════════════════
+   C1 — MATCH GUIDE
+═══════════════════════════════════ */
+#s-match-guide{background:var(--white)}
+.mg-hero{padding:40px 24px 32px;background:linear-gradient(160deg,var(--dark) 0%,#1B3A44 100%);position:relative;overflow:hidden}
+.mg-hero .glow1{position:absolute;right:-30px;top:-30px;width:160px;height:160px;background:radial-gradient(circle,rgba(42,157,143,.25) 0%,transparent 70%);border-radius:50%}
+.mg-hero .glow2{position:absolute;left:0;bottom:-30px;width:120px;height:120px;background:radial-gradient(circle,rgba(233,196,106,.2) 0%,transparent 70%);border-radius:50%}
+.mg-back{width:32px;height:32px;background:rgba(255,255,255,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-bottom:20px;position:relative;z-index:1}
+.mg-back svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round}
+.mg-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(233,196,106,.2);border:1px solid rgba(233,196,106,.3);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;color:var(--gold);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px;position:relative;z-index:1}
+.mg-h{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#fff;line-height:1.2;margin-bottom:10px;position:relative;z-index:1}
+.mg-sub{font-size:14px;color:rgba(255,255,255,.55);line-height:1.6;position:relative;z-index:1}
+.sample-tags{padding:24px 20px 0;display:flex;flex-wrap:wrap;gap:8px}
+.sample-tag{padding:7px 14px;border-radius:20px;font-size:12px;font-weight:500}
+.st1{background:rgba(42,157,143,.12);color:var(--teal)}
+.st2{background:rgba(244,162,97,.15);color:var(--peach)}
+.st3{background:rgba(231,111,81,.12);color:var(--coral)}
+.st4{background:rgba(233,196,106,.2);color:#9a7a1a}
+.st5{background:rgba(38,70,83,.08);color:var(--dark)}
+.mg-start-area{padding:28px 20px 20px}
+.mg-cta{width:100%;padding:16px;border-radius:16px;background:linear-gradient(135deg,var(--gold),var(--peach));border:none;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--dark);cursor:pointer;letter-spacing:.02em}
+
+/* ═══════════════════════════════════
+   C2 — MATCH QUIZ
+═══════════════════════════════════ */
+#s-match-quiz{background:var(--white)}
+.mq-header{padding:16px 20px 14px;border-bottom:1px solid rgba(38,70,83,.07)}
+.mq-top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.mq-back{width:36px;height:36px;border-radius:50%;background:var(--light);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.mq-back svg{width:16px;height:16px;stroke:var(--text);fill:none;stroke-width:2.2;stroke-linecap:round}
+.mq-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text);flex:1}
+.mq-step{font-size:12px;color:var(--text3);font-weight:500}
+.progress-track{height:4px;background:var(--light);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--coral));border-radius:2px;transition:width .4s ease}
+.mq-body{padding:24px 20px}
+.mq-glabel{font-size:11px;font-weight:700;color:var(--teal);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.mq-question{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:22px}
+.option-list{display:flex;flex-direction:column;gap:10px}
+.opt{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;border:1.5px solid rgba(38,70,83,.1);cursor:pointer;transition:.15s;background:var(--white)}
+.opt.on{border-color:var(--coral);background:rgba(231,111,81,.05)}
+.opt-emoji{font-size:22px}
+.opt-text{font-size:14px;color:var(--text);flex:1}
+.opt-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--mid);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.15s}
+.opt.on .opt-check{background:var(--coral);border-color:var(--coral)}
+.opt.on .opt-check::after{content:'';width:7px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translateY(-1px);display:block}
+.mq-footer{padding:0 20px 16px;display:flex;gap:10px}
+.mq-prev{width:48px;height:48px;border-radius:14px;border:1.5px solid rgba(38,70,83,.12);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.mq-prev svg{width:18px;height:18px;stroke:var(--text2);fill:none;stroke-width:2.2;stroke-linecap:round}
+.mq-next{flex:1;height:48px;border-radius:14px;background:linear-gradient(135deg,var(--gold),var(--peach));border:none;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--dark);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.mq-next svg{width:16px;height:16px;stroke:var(--dark);fill:none;stroke-width:2.5;stroke-linecap:round}
+
+/* ═══════════════════════════════════
+   C3 — MATCH RESULT
+═══════════════════════════════════ */
+#s-match-result{background:var(--off)}
+.mr-hero{background:linear-gradient(145deg,var(--dark) 0%,#1B3A44 100%);padding:18px 20px 24px;position:relative;overflow:hidden}
+.mr-hero .glow1{position:absolute;right:-20px;bottom:-20px;width:140px;height:140px;background:radial-gradient(circle,rgba(42,157,143,.2) 0%,transparent 70%);border-radius:50%}
+.mr-hero .glow2{position:absolute;left:-10px;top:-10px;width:100px;height:100px;background:radial-gradient(circle,rgba(233,196,106,.15) 0%,transparent 70%);border-radius:50%}
+.mr-top{display:flex;align-items:center;gap:10px;margin-bottom:18px;position:relative;z-index:1}
+.mr-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#fff;flex:1}
+.mr-redo{font-size:12px;color:rgba(255,255,255,.45);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.persona-card{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:14px 16px;position:relative;z-index:1}
+.persona-lb{font-size:10px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.persona-tags{display:flex;gap:6px;flex-wrap:wrap}
+.ptag{padding:4px 10px;border-radius:10px;font-size:11px;font-weight:600}
+.pt1{background:rgba(233,196,106,.2);color:var(--gold)}
+.pt2{background:rgba(42,157,143,.2);color:var(--teal)}
+.pt3{background:rgba(244,162,97,.2);color:var(--peach)}
+.result-list{padding:14px 20px}
+.rl-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.rc{background:var(--white);border-radius:18px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 12px rgba(38,70,83,.07);position:relative;overflow:hidden;cursor:pointer}
+.rc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
+.rc.r1::before{background:linear-gradient(180deg,var(--gold),var(--peach))}
+.rc.r2::before{background:linear-gradient(180deg,var(--teal),var(--dark))}
+.rc.r3::before{background:linear-gradient(180deg,var(--mid),#ddd)}
+.rc-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.rc-emoji{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.rc-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--text);flex:1}
+.rc-badge{padding:4px 10px;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:800}
+.rcb-high{background:rgba(233,196,106,.2);color:#9a7a1a}
+.rcb-mid{background:rgba(42,157,143,.15);color:var(--teal)}
+.rcb-low{background:var(--light);color:var(--text2)}
+.rc-reason{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:10px;font-style:italic}
+.rc-acts{display:flex;gap:8px}
+.rca{flex:1;padding:9px;border-radius:10px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;text-align:center;cursor:pointer}
+.rca.p{background:linear-gradient(135deg,var(--peach),var(--coral));color:#fff;border:none}
+.rca.s{background:transparent;border:1.5px solid rgba(38,70,83,.12);color:var(--text2)}
+
+/* ═══════════════════════════════════
+   D — MANAGE DASHBOARD
+═══════════════════════════════════ */
+#s-manage{background:var(--off)}
+.manage-hero{background:linear-gradient(135deg,var(--dark),#1B3A44);padding:18px 20px 24px;position:relative;overflow:hidden}
+.manage-hero .glow1{position:absolute;right:-20px;top:-20px;width:120px;height:120px;background:radial-gradient(circle,rgba(42,157,143,.25) 0%,transparent 70%);border-radius:50%}
+.mgr-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(42,157,143,.2);border:1px solid rgba(42,157,143,.3);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;color:var(--teal);letter-spacing:.06em;margin-bottom:10px;position:relative;z-index:1}
+.mgr-row{display:flex;align-items:flex-end;justify-content:space-between;position:relative;z-index:1}
+.mgr-name{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#fff;margin-bottom:2px}
+.mgr-role{font-size:12px;color:rgba(255,255,255,.48)}
+.notif-btn{width:36px;height:36px;background:rgba(255,255,255,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.notif-btn svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round}
+.notif-dot2{position:absolute;top:6px;right:6px;width:8px;height:8px;background:var(--coral);border-radius:50%;border:1.5px solid #1B3A44}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 20px}
+.stat-card{background:var(--white);border-radius:16px;padding:16px;box-shadow:0 2px 10px rgba(38,70,83,.06);cursor:pointer}
+.sc-label{font-size:11px;color:var(--text3);font-weight:500;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+.sc-value{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px}
+.sc-trend{font-size:11px;font-weight:600;display:flex;align-items:center;gap:3px}
+.sc-up{color:var(--teal)} .sc-warn{color:var(--coral)}
+.qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 20px;margin-bottom:16px}
+.qa-card{background:var(--white);border-radius:16px;padding:15px;display:flex;align-items:center;gap:11px;box-shadow:0 2px 10px rgba(38,70,83,.06);cursor:pointer;transition:.15s}
+.qa-card:active{transform:scale(.97)}
+.qa-icon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.qi-teal{background:rgba(42,157,143,.12)} .qi-gold{background:rgba(233,196,106,.2)} .qi-coral{background:rgba(231,111,81,.12)} .qi-dark{background:rgba(38,70,83,.08)}
+.qa-label{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--text);line-height:1.3}
+.pending-section{padding:0 20px}
+.ps-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.ps-count{background:var(--coral);color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:8px}
+.pend-item{background:var(--white);border-radius:14px;padding:13px 15px;margin-bottom:8px;display:flex;align-items:center;gap:11px;box-shadow:0 1px 8px rgba(38,70,83,.06);cursor:pointer}
+.pend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.pend-name{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px}
+.pend-meta{font-size:11px;color:var(--text3)}
+.pend-time{font-size:11px;color:var(--text3);white-space:nowrap}
+
+/* ═══════════════════════════════════
+   D2 — EDIT CLUB PAGE
+═══════════════════════════════════ */
+#s-edit-club{background:var(--off)}
+.edit-club-preview{margin:14px 20px;background:linear-gradient(135deg,rgba(42,157,143,.1),rgba(38,70,83,.06));border:1.5px dashed rgba(42,157,143,.4);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.ecp-icon{width:40px;height:40px;border-radius:12px;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:20px}
+.ecp-text .ecp-t{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--teal);margin-bottom:2px}
+.ecp-text .ecp-s{font-size:12px;color:var(--text2)}
+
+/* ═══════════════════════════════════
+   D3 — PUBLISH RECRUIT
+═══════════════════════════════════ */
+#s-publish{background:var(--off)}
+
+/* ═══════════════════════════════════
+   D6 — APPLICATIONS
+═══════════════════════════════════ */
+#s-applications{background:var(--off)}
+.app-item{background:var(--white);border-radius:14px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 8px rgba(38,70,83,.06);cursor:pointer}
+.app-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.app-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px}
+.app-meta{font-size:11px;color:var(--text3)}
+.app-status{padding:4px 10px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap}
+.as-new{background:rgba(231,111,81,.12);color:var(--coral)}
+.as-ok{background:rgba(42,157,143,.12);color:var(--teal)}
+
+/* ═══════════════════════════════════
+   E1 — MESSAGES
+═══════════════════════════════════ */
+#s-messages{background:var(--off)}
+.msg-item{background:var(--white);border-radius:16px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(38,70,83,.06);cursor:pointer;position:relative}
+.msg-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.msg-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px}
+.msg-preview{font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msg-time{font-size:11px;color:var(--text3);white-space:nowrap;align-self:flex-start;margin-top:2px}
+.msg-unread{position:absolute;top:14px;right:14px;width:8px;height:8px;background:var(--coral);border-radius:50%}
+
+/* ── message detail ── */
+#s-msg-detail{background:var(--off)}
+.msgd-header{background:var(--white);padding:12px 20px 14px;border-bottom:1px solid rgba(38,70,83,.07);display:flex;align-items:center;gap:10px}
+.msgd-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.msgd-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text)}
+.msgd-status{font-size:11px;color:var(--teal)}
+.msg-bubbles{padding:16px 20px;display:flex;flex-direction:column;gap:10px}
+.bubble-row{display:flex;gap:8px}
+.bubble-row.me{flex-direction:row-reverse}
+.bubble-av{width:30px;height:30px;border-radius:50%;background:var(--light);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;align-self:flex-end}
+.bubble{max-width:220px;padding:10px 14px;border-radius:18px;font-size:13px;line-height:1.5}
+.bubble.them{background:var(--white);color:var(--text);border-radius:4px 18px 18px 18px;box-shadow:0 1px 6px rgba(38,70,83,.08)}
+.bubble.me{background:linear-gradient(135deg,var(--peach),var(--coral));color:#fff;border-radius:18px 4px 18px 18px}
+.msg-input-bar{padding:10px 16px 12px;background:var(--white);border-top:1px solid rgba(38,70,83,.07);display:flex;gap:10px;align-items:center}
+.msg-input{flex:1;background:var(--light);border:none;border-radius:22px;padding:10px 16px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none}
+.msg-send{width:38px;height:38px;background:var(--coral);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;border:none}
+.msg-send svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round}
+
+/* ═══════════════════════════════════
+   E3 — PROFILE (STUDENT)
+═══════════════════════════════════ */
+#s-profile{background:var(--off)}
+.profile-hero{background:linear-gradient(145deg,var(--dark),#1B3A44);padding:24px 20px 28px;position:relative;overflow:hidden}
+.ph-glow{position:absolute;right:-20px;top:-20px;width:140px;height:140px;background:radial-gradient(circle,rgba(233,196,106,.2) 0%,transparent 70%);border-radius:50%}
+.ph-top{display:flex;align-items:flex-start;justify-content:space-between;position:relative;z-index:1}
+.ph-av{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--peach));display:flex;align-items:center;justify-content:center;font-size:28px;border:3px solid rgba(255,255,255,.2)}
+.ph-settings{width:32px;height:32px;background:rgba(255,255,255,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.ph-settings svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round}
+.ph-name{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff;margin-top:12px;margin-bottom:2px;position:relative;z-index:1}
+.ph-bio{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:14px;position:relative;z-index:1}
+.ph-tags{display:flex;gap:6px;flex-wrap:wrap;position:relative;z-index:1}
+.ph-tag{padding:4px 10px;border-radius:10px;font-size:11px;font-weight:600}
+.pht1{background:rgba(233,196,106,.2);color:var(--gold)} .pht2{background:rgba(42,157,143,.2);color:var(--teal)} .pht3{background:rgba(244,162,97,.2);color:var(--peach)}
+.profile-tabs{display:flex;background:var(--white);border-bottom:1px solid rgba(38,70,83,.07);padding:0 20px}
+.ptab{flex:1;text-align:center;padding:12px 0;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;position:relative}
+.ptab.on{color:var(--coral)}
+.ptab.on::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:2px;background:var(--coral);border-radius:2px 2px 0 0}
+.profile-list-item{background:var(--white);border-radius:14px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 8px rgba(38,70,83,.06);cursor:pointer}
+.pli-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.pli-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px}
+.pli-meta{font-size:11px;color:var(--text3)}
+.pli-status{padding:4px 9px;border-radius:9px;font-size:11px;font-weight:600}
+.ps-pending{background:rgba(233,196,106,.2);color:#9a7a1a}
+.ps-done{background:rgba(42,157,143,.12);color:var(--teal)}
+
+/* ═══════════════════════════════════
+   APPLY SUCCESS
+═══════════════════════════════════ */
+#s-apply-success{background:var(--white);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 32px}
+.success-emoji{font-size:72px;margin-bottom:24px;animation:bounce .6s ease}
+@keyframes bounce{0%,100%{transform:translateY(0)}40%{transform:translateY(-16px)}}
+.success-h{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--text);margin-bottom:12px}
+.success-sub{font-size:15px;color:var(--text2);line-height:1.6;margin-bottom:32px}
+.success-btns{display:flex;flex-direction:column;gap:10px;width:100%}
+.success-btns .btn-primary{padding:15px;font-size:15px;border-radius:16px}
+.success-btns .btn-secondary{padding:15px;font-size:15px;border-radius:16px}
+
+/* ═══════════════════════════════════
+   SETTINGS PAGE
+═══════════════════════════════════ */
+#s-settings{background:var(--off)}
+.settings-item{background:var(--white);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid rgba(38,70,83,.05)}
+.si-left{display:flex;align-items:center;gap:12px}
+.si-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.si-title{font-size:14px;font-weight:500;color:var(--text)}
+.si-sub{font-size:12px;color:var(--text3);margin-top:1px}
+.si-arrow svg{width:16px;height:16px;stroke:var(--mid);fill:none;stroke-width:2;stroke-linecap:round}
+.settings-section-title{padding:18px 20px 8px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em}
+
+/* ═══════════════════════════════════
+   DATA STATS PAGE
+═══════════════════════════════════ */
+#s-stats{background:var(--off)}
+.chart-card{background:var(--white);border-radius:16px;margin:0 20px 12px;padding:16px;box-shadow:0 2px 10px rgba(38,70,83,.06)}
+.chart-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px}
+.bar-chart{display:flex;align-items:flex-end;gap:8px;height:80px}
+.bar-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.bar{border-radius:6px 6px 0 0;width:100%;transition:height .4s ease}
+.bar-lb{font-size:9px;color:var(--text3);white-space:nowrap}
+
+/* ═══════════════════════════════════
+   FAQ PAGE
+═══════════════════════════════════ */
+#s-faq{background:var(--off)}
+.faq-item{background:var(--white);border-radius:14px;padding:14px 16px;margin-bottom:8px;box-shadow:0 1px 8px rgba(38,70,83,.06);cursor:pointer}
+.faq-q{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;justify-content:space-between}
+.faq-a{font-size:13px;color:var(--text2);line-height:1.6;display:none}
+.faq-item.open .faq-a{display:block}
+.faq-item.open .faq-q span{color:var(--coral)}
+</style>
+</head>
+<body>
+<div id="shell">
+<div id="phone">
+
+  <!-- STATUS BAR -->
+  <div id="statusbar" class="sb-light">
+    <span class="time">9:41</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="11" rx="2"/><path d="M22 11V13" stroke-width="2"/></svg>
+    </div>
+  </div>
+
+  <!-- SCREENS -->
+  <div id="screens">
+
+  <!-- ════════════════════════════
+       A — WELCOME
+  ════════════════════════════ -->
+  <div class="screen active" id="s-welcome" data-sb="dark">
+    <div class="wlc-shapes"><div class="wlc-c1"></div><div class="wlc-c2"></div><div class="wlc-dots"></div></div>
+    <div class="wlc-inner">
+      <div class="wlc-badge"><div class="wlc-dot"></div>ClubMatch</div>
+      <div class="wlc-h">发现<span class="acc">属于你</span>的<br>社团世界</div>
+      <div class="wlc-sub">探索校园社团，智能匹配，找到你真正热爱的组织</div>
+    </div>
+    <div class="role-cards">
+      <div class="role-card fresh" onclick="go('s-explore')">
+        <div class="role-icon">🎓</div>
+        <div class="role-title">我是新生</div>
+        <div class="role-desc">浏览社团，做智能匹配，<br>找到最适合你的组织</div>
+        <div class="role-arr"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      </div>
+      <div class="role-card club" onclick="go('s-manage')">
+        <div class="role-icon">🏛️</div>
+        <div class="role-title">我是社团负责人</div>
+        <div class="role-desc">发布招新信息，管理成员，<br>触达更多合适的同学</div>
+        <div class="role-arr"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      </div>
+    </div>
+    <div class="wlc-guest" onclick="go('s-explore')">先随便逛逛 →</div>
+  </div>
+
+  <!-- ════════════════════════════
+       B1 — EXPLORE
+  ════════════════════════════ -->
+  <div class="screen" id="s-explore" data-sb="light">
+    <div class="exp-header">
+      <div class="exp-toprow">
+        <div><div class="exp-greet">下午好，小林同学 👋</div><div class="exp-title">发现社团</div></div>
+        <div class="exp-avatar" onclick="go('s-profile')">😊</div>
+      </div>
+      <div class="search-bar" onclick="go('s-search')">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <span>搜索社团、活动、招新…</span>
+      </div>
+    </div>
+
+    <div class="match-banner" onclick="go('s-match-guide')">
+      <div class="match-banner::before"></div>
+      <div><div class="mbanner-lbl">✨ AI 智能匹配</div><div class="mbanner-ttl">还不确定加入哪个？让我们帮你找</div></div>
+      <div class="mbanner-btn">开始匹配</div>
+    </div>
+
+    <div class="chip-row" style="margin-bottom:14px">
+      <div class="chip on">全部</div>
+      <div class="chip off" onclick="this.closest('.chip-row').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));this.classList.add('on')">🎨 艺术</div>
+      <div class="chip off" onclick="this.closest('.chip-row').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));this.classList.add('on')">⚽ 体育</div>
+      <div class="chip off" onclick="this.closest('.chip-row').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));this.classList.add('on')">🔬 学术</div>
+      <div class="chip off" onclick="this.closest('.chip-row').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));this.classList.add('on')">💼 职业</div>
+      <div class="chip off" onclick="this.closest('.chip-row').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));this.classList.add('on')">🌱 公益</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-hd"><div class="sec-title">🔥 热门社团</div><div class="sec-more" onclick="go('s-search')">查看全部</div></div>
+      <div class="hscroll">
+        <div class="club-card-h" onclick="go('s-club')"><div class="cch-img" style="background:linear-gradient(135deg,rgba(42,157,143,.12),rgba(42,157,143,.04))">🎭</div><div class="cch-body"><div class="cch-name">戏剧社</div><div class="cch-desc">表演、剧本、舞台制作</div><div class="cch-tags"><div class="mini-tag mini-warm">招新中</div><div class="mini-tag">低门槛</div></div></div></div>
+        <div class="club-card-h" onclick="go('s-club')"><div class="cch-img" style="background:linear-gradient(135deg,rgba(233,196,106,.15),rgba(244,162,97,.06))">📸</div><div class="cch-body"><div class="cch-name">摄影协会</div><div class="cch-desc">记录生活，展览作品</div><div class="cch-tags"><div class="mini-tag mini-warm">招新中</div><div class="mini-tag">中等投入</div></div></div></div>
+        <div class="club-card-h" onclick="go('s-club')"><div class="cch-img" style="background:linear-gradient(135deg,rgba(231,111,81,.1),rgba(244,162,97,.06))">💻</div><div class="cch-body"><div class="cch-name">计算机协会</div><div class="cch-desc">编程、竞赛、项目实战</div><div class="cch-tags"><div class="mini-tag">有门槛</div><div class="mini-tag">高投入</div></div></div></div>
+        <div class="club-card-h" onclick="go('s-club')"><div class="cch-img" style="background:linear-gradient(135deg,rgba(42,157,143,.08),rgba(38,70,83,.04))">🌿</div><div class="cch-body"><div class="cch-name">环保公益社</div><div class="cch-desc">公益、环境、社区活动</div><div class="cch-tags"><div class="mini-tag mini-warm">招新中</div><div class="mini-tag">低门槛</div></div></div></div>
+      </div>
+    </div>
+
+    <div class="sec" style="margin-top:18px">
+      <div class="sec-hd"><div class="sec-title">📅 近期活动</div><div class="sec-more">查看全部</div></div>
+      <div class="act-card" onclick="go('s-activity')">
+        <div class="act-cover" style="background:linear-gradient(135deg,#264653,#1B3A44)">
+          <span>🎭</span>
+          <div class="act-cover-badge">公开演出</div>
+        </div>
+        <div class="act-body">
+          <div class="act-org">校园戏剧社</div>
+          <div class="act-title">《等待戈多》秋季公演</div>
+          <div class="act-meta"><span>🗓 10月20日 19:00</span><span>📍 大礼堂</span><span>🎟 免费</span></div>
+        </div>
+      </div>
+      <div class="act-card" onclick="go('s-activity')">
+        <div class="act-cover" style="background:linear-gradient(135deg,rgba(233,196,106,.3),rgba(244,162,97,.2))">
+          <span>📷</span>
+          <div class="act-cover-badge">工作坊</div>
+        </div>
+        <div class="act-body">
+          <div class="act-org">摄影协会</div>
+          <div class="act-title">秋日人像摄影工作坊</div>
+          <div class="act-meta"><span>🗓 10月22日 14:00</span><span>📍 艺术楼101</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec" style="margin-top:18px">
+      <div class="sec-hd"><div class="sec-title">📢 正在招新</div><div class="sec-more">查看全部</div></div>
+      <div class="recruit-card" onclick="go('s-recruit')">
+        <div class="recruit-emoji" style="background:rgba(42,157,143,.1)">🌿</div>
+        <div style="flex:1;min-width:0"><div class="recruit-org">环保公益社</div><div class="recruit-title">2024秋季招新 · 全部门开放</div><div class="recruit-meta"><div class="recruit-deadline">⏰ 10月15日截止</div><div class="recruit-dept">宣传/活动/外联</div></div></div>
+      </div>
+      <div class="recruit-card" onclick="go('s-recruit')">
+        <div class="recruit-emoji" style="background:rgba(233,196,106,.15)">🎵</div>
+        <div style="flex:1;min-width:0"><div class="recruit-org">吉他社</div><div class="recruit-title">招募热爱音乐的你</div><div class="recruit-meta"><div class="recruit-deadline">⏰ 10月20日截止</div><div class="recruit-dept">零基础欢迎</div></div></div>
+      </div>
+      <div class="recruit-card" onclick="go('s-recruit')">
+        <div class="recruit-emoji" style="background:rgba(231,111,81,.1)">🏆</div>
+        <div style="flex:1;min-width:0"><div class="recruit-org">辩论队</div><div class="recruit-title">2024年度辩手招募</div><div class="recruit-meta"><div class="recruit-deadline">⏰ 10月18日截止</div><div class="recruit-dept">需通过初试</div></div></div>
+      </div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       B2 — SEARCH
+  ════════════════════════════ -->
+  <div class="screen" id="s-search" data-sb="light">
+    <div class="search-header">
+      <div class="search-input-row">
+        <div class="search-input-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input placeholder="搜索社团、活动…" value="戏剧">
+        </div>
+        <div class="search-cancel" onclick="back()">取消</div>
+      </div>
+      <div class="filter-row">
+        <div class="filter-pill on">全部</div>
+        <div class="filter-pill" onclick="toggleFilter(this)">正在招新</div>
+        <div class="filter-pill" onclick="toggleFilter(this)">低门槛</div>
+        <div class="filter-pill" onclick="toggleFilter(this)">中等投入</div>
+        <div class="filter-pill" onclick="toggleFilter(this)">艺术类</div>
+      </div>
+    </div>
+    <div class="result-tabs">
+      <div class="rtab on">社团 (4)</div>
+      <div class="rtab" onclick="toggleRtab(this)">活动 (2)</div>
+      <div class="rtab" onclick="toggleRtab(this)">招新 (3)</div>
+    </div>
+    <div style="padding:14px 20px">
+      <div class="recruit-card" onclick="go('s-club')">
+        <div class="recruit-emoji" style="background:rgba(38,70,83,.08)">🎭</div>
+        <div style="flex:1;min-width:0"><div class="recruit-org">艺术 · 表演</div><div class="recruit-title">校园戏剧社</div><div class="recruit-meta"><div class="mini-tag mini-warm" style="font-size:11px;padding:3px 8px">招新中</div><div class="recruit-dept">低门槛 · 每周3小时</div></div></div>
+      </div>
+      <div class="recruit-card" onclick="go('s-club')">
+        <div class="recruit-emoji" style="background:rgba(233,196,106,.15)">🎵</div>
+        <div style="flex:1;min-width:0"><div class="recruit-org">音乐 · 表演</div><div class="recruit-title">吉他社</div><div class="recruit-meta"><div class="mini-tag mini-warm" style="font-size:11px;padding:3px 8px">招新中</div><div class="recruit-dept">低门槛 · 每周2小时</div></div></div>
+      </div>
+      <div class="recruit-card" onclick="go('s-club')">
+        <div class="recruit-emoji" style="background:rgba(42,157,143,.1)">📻</div>
+        <div style="flex:1;min-width:0"><div class="recruit-org">媒体 · 播音</div><div class="recruit-title">校园广播站</div><div class="recruit-meta"><div class="mini-tag" style="font-size:11px;padding:3px 8px">招新已结束</div><div class="recruit-dept">低门槛 · 弹性时间</div></div></div>
+      </div>
+      <div class="recruit-card" onclick="go('s-club')">
+        <div class="recruit-emoji" style="background:rgba(231,111,81,.1)">📰</div>
+        <div style="flex:1;min-width:0"><div class="recruit-org">媒体 · 写作</div><div class="recruit-title">校园文学社</div><div class="recruit-meta"><div class="mini-tag mini-warm" style="font-size:11px;padding:3px 8px">招新中</div><div class="recruit-dept">低门槛 · 每周2小时</div></div></div>
+      </div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       B4 — CLUB PAGE
+  ════════════════════════════ -->
+  <div class="screen" id="s-club" data-sb="dark">
+    <div class="club-hero">
+      <div class="club-hero-bg"></div>
+      <div class="club-hero-pattern"></div>
+      <div class="club-hero-emoji">🎭</div>
+      <div class="hero-top-btns">
+        <div class="hero-back" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+        <div class="hero-actions">
+          <div class="hero-act" onclick="toast('❤️ 已收藏')"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+          <div class="hero-act" onclick="toast('链接已复制')"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div>
+        </div>
+      </div>
+      <div style="position:relative;z-index:1">
+        <div class="club-verified">✓ 已认证社团</div>
+        <div class="club-name-lg">校园戏剧社</div>
+        <div class="club-slogan">"让每个人都能登上舞台"</div>
+      </div>
+    </div>
+
+    <div class="club-stats-row">
+      <div class="cstat"><div class="cstat-val">156</div><div class="cstat-lb">成员</div></div>
+      <div class="cstat"><div class="cstat-val">3年</div><div class="cstat-lb">历史</div></div>
+      <div class="cstat"><div class="cstat-val">12次</div><div class="cstat-lb">演出</div></div>
+      <div class="cstat"><div class="cstat-val">4.9⭐</div><div class="cstat-lb">评分</div></div>
+    </div>
+
+    <div class="match-bar" onclick="go('s-match-result')">
+      <div class="match-ring-wrap">
+        <div class="match-ring"><div class="match-ring-v">87%</div></div>
+        <div><div class="match-desc-t">与你高度匹配</div><div class="match-desc-s">符合你的兴趣和投入偏好</div></div>
+      </div>
+      <div class="match-why">查看原因 →</div>
+    </div>
+
+    <div class="club-tabs">
+      <div class="ctab on" onclick="switchCtab(this)">概览</div>
+      <div class="ctab" onclick="switchCtab(this)">招新</div>
+      <div class="ctab" onclick="switchCtab(this)">活动</div>
+      <div class="ctab" onclick="switchCtab(this)">问答</div>
+    </div>
+
+    <div class="info-block">
+      <div class="ib-title">基本信息</div>
+      <div class="info-grid">
+        <div class="ig-item"><div class="ig-lb">活动时间</div><div class="ig-val">每周三晚19:00</div></div>
+        <div class="ig-item"><div class="ig-lb">时间投入</div><div class="ig-val">每周3-5小时</div></div>
+        <div class="ig-item"><div class="ig-lb">加入门槛</div><div class="ig-val">零基础欢迎</div></div>
+        <div class="ig-item"><div class="ig-lb">规模</div><div class="ig-val">中型 50-200人</div></div>
+      </div>
+    </div>
+    <div class="info-block">
+      <div class="ib-title">标签</div>
+      <div class="tag-grid"><span class="tag tag-teal">🎭 舞台表演</span><span class="tag tag-peach">✍️ 剧本创作</span><span class="tag tag-coral">👥 团队协作</span><span class="tag tag-gold">🏆 年度公演</span><span class="tag tag-gray">低门槛</span><span class="tag tag-warm">表达型</span></div>
+    </div>
+    <div class="info-block">
+      <div class="ib-title">社团简介</div>
+      <div class="body-text">校园戏剧社成立于2021年，致力于为热爱表演艺术的同学提供一个探索自我、展示才华的舞台。我们每学期举办两次公开演出，并不定期组织工作坊和观剧活动。无论你是零基础还是有表演经验，都真诚欢迎！</div>
+    </div>
+    <div class="info-block">
+      <div class="ib-title">近期招新</div>
+      <div class="recruit-card" style="margin-bottom:0" onclick="go('s-recruit')">
+        <div class="recruit-emoji" style="background:rgba(231,111,81,.1)">🎭</div>
+        <div style="flex:1;min-width:0"><div class="recruit-org">校园戏剧社</div><div class="recruit-title">2024秋季招募 · 全方向开放</div><div class="recruit-meta"><div class="recruit-deadline">⏰ 10月25日截止</div><div class="recruit-dept">演出/编剧/舞台/宣传</div></div></div>
+      </div>
+    </div>
+
+    <div class="cta-bar">
+      <div class="btn-secondary" style="flex:1;padding:13px;font-size:13px" onclick="go('s-msg-detail')">💬 提问</div>
+      <div class="btn-primary" style="flex:2;padding:13px;font-size:13px" onclick="go('s-recruit')">📝 查看招新</div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       B5 — ACTIVITY DETAIL
+  ════════════════════════════ -->
+  <div class="screen" id="s-activity" data-sb="dark">
+    <div class="act-hero" style="background:linear-gradient(145deg,#264653,#1B3A44)">
+      <div class="act-hero-back" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+      🎭
+    </div>
+    <div class="info-block" style="margin-top:0;background:var(--white)">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><span class="tag tag-coral">公开演出</span><span class="tag tag-teal">免费入场</span></div>
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--text);margin-bottom:6px">《等待戈多》秋季公演</div>
+      <div style="font-size:13px;color:var(--text3);margin-bottom:2px" onclick="go('s-club')" style="cursor:pointer">校园戏剧社 ›</div>
+    </div>
+    <div class="info-block">
+      <div class="ib-title">活动信息</div>
+      <div class="info-grid">
+        <div class="ig-item"><div class="ig-lb">时间</div><div class="ig-val">10月20日 19:00</div></div>
+        <div class="ig-item"><div class="ig-lb">地点</div><div class="ig-val">校大礼堂</div></div>
+        <div class="ig-item"><div class="ig-lb">入场</div><div class="ig-val">免费开放</div></div>
+        <div class="ig-item"><div class="ig-lb">时长</div><div class="ig-val">约2小时</div></div>
+      </div>
+    </div>
+    <div class="info-block">
+      <div class="ib-title">活动介绍</div>
+      <div class="body-text">贝克特经典荒诞派名作《等待戈多》，由我社核心成员历经三个月排练呈现。本次演出将加入现代视觉设计元素，带来全新的观演体验。欢迎全体同学观看！</div>
+    </div>
+    <div class="cta-bar">
+      <div class="btn-secondary" style="flex:1;padding:13px;font-size:13px" onclick="toast('❤️ 已添加到日历')">收藏活动</div>
+      <div class="btn-primary" style="flex:2;padding:13px;font-size:13px" onclick="go('s-club')">查看社团主页</div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       B6 — RECRUIT DETAIL
+  ════════════════════════════ -->
+  <div class="screen" id="s-recruit" data-sb="light">
+    <div class="back-row"><div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div><div class="page-title">招新详情</div></div>
+    <div class="info-block" style="margin-top:14px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div style="width:52px;height:52px;border-radius:14px;background:rgba(231,111,81,.1);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🎭</div>
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text)">2024秋季招募</div>
+          <div style="font-size:13px;color:var(--text3)">校园戏剧社</div>
+        </div>
+      </div>
+      <div class="info-grid">
+        <div class="ig-item"><div class="ig-lb">截止日期</div><div class="ig-val" style="color:var(--coral);font-weight:600">10月25日</div></div>
+        <div class="ig-item"><div class="ig-lb">招募方向</div><div class="ig-val">4个部门</div></div>
+        <div class="ig-item"><div class="ig-lb">门槛要求</div><div class="ig-val">零基础欢迎</div></div>
+        <div class="ig-item"><div class="ig-lb">招募人数</div><div class="ig-val">约30人</div></div>
+      </div>
+    </div>
+    <div class="info-block">
+      <div class="ib-title">开放部门</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="background:var(--off);border-radius:12px;padding:12px 14px">
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">🎭 演出部</div>
+          <div style="font-size:12px;color:var(--text2)">参与舞台表演，零基础可学，热情是最重要的</div>
+        </div>
+        <div style="background:var(--off);border-radius:12px;padding:12px 14px">
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">✍️ 编剧部</div>
+          <div style="font-size:12px;color:var(--text2)">负责剧本创作与改编，喜欢文字表达即可</div>
+        </div>
+        <div style="background:var(--off);border-radius:12px;padding:12px 14px">
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">🎨 舞美部</div>
+          <div style="font-size:12px;color:var(--text2)">舞台设计、道具制作，有设计兴趣优先</div>
+        </div>
+        <div style="background:var(--off);border-radius:12px;padding:12px 14px">
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">📢 宣传部</div>
+          <div style="font-size:12px;color:var(--text2)">负责推文、海报、视频，喜欢新媒体运营</div>
+        </div>
+      </div>
+    </div>
+    <div class="info-block">
+      <div class="ib-title">招募流程</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;gap:10px;align-items:center"><div style="width:24px;height:24px;border-radius:50%;background:var(--coral);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div style="font-size:13px;color:var(--text)">提交在线报名表（10月25日前）</div></div>
+        <div style="display:flex;gap:10px;align-items:center"><div style="width:24px;height:24px;border-radius:50%;background:var(--peach);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div><div style="font-size:13px;color:var(--text)">参加面试/试训（10月27-28日）</div></div>
+        <div style="display:flex;gap:10px;align-items:center"><div style="width:24px;height:24px;border-radius:50%;background:var(--teal);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div><div style="font-size:13px;color:var(--text)">录取结果通知（10月30日）</div></div>
+      </div>
+    </div>
+    <div class="cta-bar">
+      <div class="btn-secondary" style="flex:1;padding:13px;font-size:13px" onclick="go('s-msg-detail')">提问</div>
+      <div class="btn-primary" style="flex:2;padding:13px;font-size:13px" onclick="go('s-apply')">立即报名</div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       B7 — APPLY
+  ════════════════════════════ -->
+  <div class="screen" id="s-apply" data-sb="light">
+    <div class="back-row"><div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div><div class="page-title">提交报名</div></div>
+    <div class="apply-head" style="padding:14px 20px 16px;background:var(--white)">
+      <div class="apply-target">
+        <div class="apply-target-emoji">🎭</div>
+        <div><div class="apply-target-name">校园戏剧社</div><div class="apply-target-sub">2024秋季招募 · 请选择部门</div></div>
+      </div>
+    </div>
+    <div style="padding:16px 20px">
+      <div class="field"><label>姓名</label><input placeholder="你的姓名" value="林晓雨"></div>
+      <div class="field"><label>院系 / 年级</label><input placeholder="如：计算机学院 大一" value="外国语学院 大一"></div>
+      <div class="field"><label>联系方式</label><input placeholder="手机或微信" value="138****8888"></div>
+      <div class="field"><label>申请部门</label>
+        <select><option>演出部</option><option>编剧部</option><option>舞美部</option><option>宣传部</option></select>
+      </div>
+      <div class="field"><label>为什么想加入</label><textarea placeholder="告诉我们你的故事和热情…">我从小喜欢表演，参加过高中话剧社，很希望在大学继续这个爱好，同时认识更多志同道合的朋友！</textarea></div>
+      <div class="field"><label>每周可投入时间</label>
+        <select><option>3小时以内</option><option selected>3-5小时</option><option>5小时以上</option></select>
+      </div>
+      <div class="btn-primary" style="width:100%;padding:15px;font-size:15px;margin-top:8px;border-radius:16px" onclick="go('s-apply-success')">提交报名申请</div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       APPLY SUCCESS
+  ════════════════════════════ -->
+  <div class="screen" id="s-apply-success" data-sb="light">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 32px 0;text-align:center;height:100%">
+      <div style="font-size:72px;margin-bottom:24px;animation:bounce .6s ease">🎉</div>
+      <div class="success-h">报名成功！</div>
+      <div class="success-sub">你的申请已提交给校园戏剧社<br>结果将在 10月30日 前通知你</div>
+      <div style="background:var(--off);border-radius:16px;padding:16px 20px;width:100%;margin-bottom:28px;text-align:left">
+        <div style="font-size:12px;color:var(--text3);margin-bottom:4px">申请信息</div>
+        <div style="font-size:14px;font-weight:500;color:var(--text)">校园戏剧社 · 演出部</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px">申请号：#20241012-0089</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;width:100%">
+        <div class="btn-primary" style="padding:14px;font-size:14px;border-radius:16px" onclick="go('s-profile')">查看我的报名记录</div>
+        <div class="btn-secondary" style="padding:14px;font-size:14px;border-radius:16px" onclick="go('s-explore')">继续浏览其他社团</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════
+       C1 — MATCH GUIDE
+  ════════════════════════════ -->
+  <div class="screen" id="s-match-guide" data-sb="dark">
+    <div class="mg-hero">
+      <div class="glow1"></div><div class="glow2"></div>
+      <div class="mg-back" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+      <div class="mg-badge">✨ AI 智能匹配</div>
+      <div class="mg-h">找到更适合<br>你的社团</div>
+      <div class="mg-sub">通过兴趣、时间安排和参与偏好，为你推荐最匹配的社团和部门</div>
+    </div>
+    <div class="sample-tags">
+      <div class="sample-tag st1">🎨 艺术创作</div>
+      <div class="sample-tag st2">⏱ 低投入</div>
+      <div class="sample-tag st3">🎭 表达型活动</div>
+      <div class="sample-tag st4">🌱 公益导向</div>
+      <div class="sample-tag st5">👥 小圈子</div>
+      <div class="sample-tag st1">🔬 学术钻研</div>
+      <div class="sample-tag st2">💼 职业发展</div>
+      <div class="sample-tag st3">🏆 竞赛导向</div>
+    </div>
+    <div style="padding:20px">
+      <div style="background:var(--off);border-radius:16px;padding:16px;margin-bottom:16px">
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px">匹配流程</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:10px;align-items:center"><div style="width:22px;height:22px;border-radius:50%;background:var(--gold);color:var(--dark);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div style="font-size:13px;color:var(--text)">回答 4 组问题（约3分钟）</div></div>
+          <div style="display:flex;gap:10px;align-items:center"><div style="width:22px;height:22px;border-radius:50%;background:var(--peach);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div><div style="font-size:13px;color:var(--text)">AI 生成你的偏好画像</div></div>
+          <div style="display:flex;gap:10px;align-items:center"><div style="width:22px;height:22px;border-radius:50%;background:var(--teal);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div><div style="font-size:13px;color:var(--text)">获得个性化社团推荐列表</div></div>
+        </div>
+      </div>
+      <div class="btn-primary" style="width:100%;padding:16px;font-size:16px;border-radius:16px" onclick="go('s-match-quiz')">开始匹配测试</div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       C2 — MATCH QUIZ
+  ════════════════════════════ -->
+  <div class="screen" id="s-match-quiz" data-sb="light">
+    <div class="mq-header">
+      <div class="mq-top">
+        <div class="mq-back" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+        <div class="mq-title">智能匹配</div>
+        <div class="mq-step" id="quiz-step-label">2 / 4</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="quiz-progress" style="width:50%"></div></div>
+    </div>
+    <div class="mq-body">
+      <div class="mq-glabel">参与目标</div>
+      <div class="mq-question">加入社团，你最希望获得什么？</div>
+      <div class="option-list">
+        <div class="opt on" onclick="toggleOpt(this)"><div class="opt-emoji">👥</div><div class="opt-text">认识更多朋友，扩大社交圈</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">🎯</div><div class="opt-text">培养兴趣爱好，丰富课外生活</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">📄</div><div class="opt-text">积累实践经验，充实简历</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">🏆</div><div class="opt-text">参与比赛，挑战自我</div><div class="opt-check"></div></div>
+      </div>
+    </div>
+    <div class="mq-footer">
+      <div class="mq-prev" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+      <div class="mq-next" onclick="go('s-match-result')">下一步 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════
+       C3 — MATCH RESULT
+  ════════════════════════════ -->
+  <div class="screen" id="s-match-result" data-sb="dark">
+    <div class="mr-hero">
+      <div class="glow1"></div><div class="glow2"></div>
+      <div class="mr-top">
+        <div class="mq-back" style="background:rgba(255,255,255,.12)" onclick="back()"><svg viewBox="0 0 24 24" stroke="white"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+        <div class="mr-title">✨ 你的匹配结果</div>
+        <div class="mr-redo" onclick="go('s-match-quiz')">重新测试</div>
+      </div>
+      <div class="persona-card">
+        <div class="persona-lb">你的偏好画像</div>
+        <div class="persona-tags">
+          <div class="ptag pt1">🌿 低门槛参与</div>
+          <div class="ptag pt2">⏱ 中等投入</div>
+          <div class="ptag pt3">🎨 兴趣探索型</div>
+          <div class="ptag pt1">👥 合作氛围</div>
+        </div>
+      </div>
+    </div>
+    <div class="result-list">
+      <div class="rl-title">为你推荐的社团</div>
+      <div class="rc r1" onclick="go('s-club')">
+        <div class="rc-top"><div class="rc-emoji" style="background:rgba(233,196,106,.15)">🎭</div><div class="rc-name">校园戏剧社</div><div class="rc-badge rcb-high">87%</div></div>
+        <div class="rc-reason">💡 你偏好低门槛、氛围友好的表达型组织，戏剧社开放包容的文化与你的风格高度契合。</div>
+        <div class="rc-acts"><div class="rca s" onclick="event.stopPropagation();toast('❤️ 已收藏')">收藏</div><div class="rca p" onclick="event.stopPropagation();go('s-club')">查看主页 →</div></div>
+      </div>
+      <div class="rc r2" onclick="go('s-club')">
+        <div class="rc-top"><div class="rc-emoji" style="background:rgba(42,157,143,.12)">📻</div><div class="rc-name">校园广播站</div><div class="rc-badge rcb-mid">79%</div></div>
+        <div class="rc-reason">💡 广播站的策划和播音方向符合你的表达偏好，时间弹性，适合初入大学的你。</div>
+        <div class="rc-acts"><div class="rca s" onclick="event.stopPropagation();toast('❤️ 已收藏')">收藏</div><div class="rca p" onclick="event.stopPropagation();go('s-club')">查看主页 →</div></div>
+      </div>
+      <div class="rc r3" onclick="go('s-club')">
+        <div class="rc-top"><div class="rc-emoji" style="background:rgba(38,70,83,.07)">📸</div><div class="rc-name">摄影协会</div><div class="rc-badge rcb-low">68%</div></div>
+        <div class="rc-reason">💡 如果你对视觉艺术感兴趣，摄影协会是个低压力的好选择，活动频率也较灵活。</div>
+        <div class="rc-acts"><div class="rca s" onclick="event.stopPropagation();toast('❤️ 已收藏')">收藏</div><div class="rca p" onclick="event.stopPropagation();go('s-club')">查看主页 →</div></div>
+      </div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       D — MANAGE DASHBOARD
+  ════════════════════════════ -->
+  <div class="screen" id="s-manage" data-sb="dark">
+    <div class="manage-hero">
+      <div class="glow1"></div>
+      <div class="mgr-badge">🏛️ 社团管理员</div>
+      <div class="mgr-row">
+        <div><div class="mgr-name">校园戏剧社</div><div class="mgr-role">Hi，林同学，今天也要加油 👋</div></div>
+        <div class="notif-btn" onclick="go('s-messages')"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><div class="notif-dot2"></div></div>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card" onclick="go('s-stats')"><div class="sc-label">本周访问</div><div class="sc-value">1,284</div><div class="sc-trend sc-up">↑ 23% 较上周</div></div>
+      <div class="stat-card" onclick="toast('收藏详情')"><div class="sc-label">收藏量</div><div class="sc-value">342</div><div class="sc-trend sc-up">↑ 15% 较上周</div></div>
+      <div class="stat-card" onclick="go('s-stats')"><div class="sc-label">匹配触达</div><div class="sc-value">891</div><div class="sc-trend sc-up">↑ 41% 本周</div></div>
+      <div class="stat-card" onclick="go('s-applications')"><div class="sc-label">待处理报名</div><div class="sc-value" style="color:var(--coral)">28</div><div class="sc-trend sc-warn">⚠ 需处理</div></div>
+    </div>
+    <div style="padding:0 20px;margin-bottom:10px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text)">快捷操作</div>
+    <div class="qa-grid">
+      <div class="qa-card" onclick="go('s-edit-club')"><div class="qa-icon qi-teal">✏️</div><div class="qa-label">编辑社团主页</div></div>
+      <div class="qa-card" onclick="go('s-publish')"><div class="qa-icon qi-gold">📢</div><div class="qa-label">发布招新公告</div></div>
+      <div class="qa-card" onclick="go('s-applications')"><div class="qa-icon qi-coral">📋</div><div class="qa-label">查看报名表</div></div>
+      <div class="qa-card" onclick="go('s-faq')"><div class="qa-icon qi-dark">💬</div><div class="qa-label">留言管理</div></div>
+    </div>
+    <div class="pending-section">
+      <div class="ps-title">最新报名申请 <div class="ps-count">28</div></div>
+      <div class="pend-item" onclick="go('s-applications')">
+        <div class="pend-dot" style="background:var(--coral)"></div>
+        <div style="flex:1;min-width:0"><div class="pend-name">张晓雨 · 大一</div><div class="pend-meta">申请部门：宣传部</div></div>
+        <div class="pend-time">10分钟前</div>
+      </div>
+      <div class="pend-item" onclick="go('s-applications')">
+        <div class="pend-dot" style="background:var(--coral)"></div>
+        <div style="flex:1;min-width:0"><div class="pend-name">李明哲 · 大一</div><div class="pend-meta">申请部门：演出部</div></div>
+        <div class="pend-time">32分钟前</div>
+      </div>
+      <div class="pend-item" onclick="go('s-faq')">
+        <div class="pend-dot" style="background:var(--teal)"></div>
+        <div style="flex:1;min-width:0"><div class="pend-name">王小雯 · 大二</div><div class="pend-meta">留言：请问排练时间如何安排？</div></div>
+        <div class="pend-time">1小时前</div>
+      </div>
+      <div class="pend-item" onclick="go('s-applications')">
+        <div class="pend-dot" style="background:var(--coral)"></div>
+        <div style="flex:1;min-width:0"><div class="pend-name">陈瑞 · 大一</div><div class="pend-meta">申请部门：编剧部</div></div>
+        <div class="pend-time">2小时前</div>
+      </div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       D2 — EDIT CLUB
+  ════════════════════════════ -->
+  <div class="screen" id="s-edit-club" data-sb="light">
+    <div class="back-row"><div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div><div class="page-title">编辑社团主页</div></div>
+    <div class="edit-club-preview">
+      <div class="ecp-icon">🎭</div>
+      <div class="ecp-text"><div class="ecp-t">预览主页效果</div><div class="ecp-s">查看当前展示效果</div></div>
+      <svg style="margin-left:auto" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round" width="16" height="16"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </div>
+    <div style="padding:0 20px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 10px">基础信息</div>
+      <div class="field"><label>社团名称</label><input value="校园戏剧社"></div>
+      <div class="field"><label>一句话定位</label><input value="让每个人都能登上舞台"></div>
+      <div class="field"><label>社团简介</label><textarea>校园戏剧社成立于2021年，致力于为热爱表演艺术的同学提供一个探索自我、展示才华的舞台。</textarea></div>
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 10px">标签与属性</div>
+      <div class="field"><label>时间投入</label><select><option selected>每周3-5小时</option><option>每周1-3小时</option><option>每周5小时以上</option></select></div>
+      <div class="field"><label>加入门槛</label><select><option selected>零基础欢迎</option><option>需要基础</option><option>需通过审核</option></select></div>
+      <div class="field"><label>适合人群（标签，逗号分隔）</label><input value="喜欢表演, 文艺青年, 想尝试新事物"></div>
+      <div style="display:flex;gap:10px;margin-top:6px;padding-bottom:20px">
+        <div class="btn-secondary" style="flex:1;padding:13px;font-size:13px" onclick="toast('草稿已保存')">保存草稿</div>
+        <div class="btn-primary" style="flex:2;padding:13px;font-size:13px" onclick="toast('✅ 主页已更新发布')">发布更新</div>
+      </div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       D3 — PUBLISH RECRUIT
+  ════════════════════════════ -->
+  <div class="screen" id="s-publish" data-sb="light">
+    <div class="back-row"><div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div><div class="page-title">发布招新公告</div></div>
+    <div style="padding:14px 20px">
+      <div class="field"><label>公告标题</label><input placeholder="如：2024秋季招募 · 全部门开放"></div>
+      <div class="field"><label>招募方向（可多选）</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+          <div class="chip on" onclick="this.classList.toggle('on');this.classList.toggle('off')">演出部</div>
+          <div class="chip on" onclick="this.classList.toggle('on');this.classList.toggle('off')">编剧部</div>
+          <div class="chip off" onclick="this.classList.toggle('on');this.classList.toggle('off')">舞美部</div>
+          <div class="chip off" onclick="this.classList.toggle('on');this.classList.toggle('off')">宣传部</div>
+        </div>
+      </div>
+      <div class="field"><label>报名截止日期</label><input type="date" value="2024-10-25"></div>
+      <div class="field"><label>门槛要求说明</label><input value="零基础欢迎，热情是最重要的"></div>
+      <div class="field"><label>招募人数</label><input type="number" value="30" placeholder="预计招募人数"></div>
+      <div class="field"><label>招募流程说明</label><textarea placeholder="描述面试/试训流程…">提交报名 → 面试/试训（10.27-28）→ 录取通知（10.30）</textarea></div>
+      <div class="field"><label>报名方式</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+          <div class="chip on">站内报名</div>
+          <div class="chip off" onclick="this.classList.toggle('on');this.classList.toggle('off')">外链表单</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;padding-bottom:20px">
+        <div class="btn-secondary" style="flex:1;padding:13px;font-size:13px" onclick="toast('草稿已保存')">预览</div>
+        <div class="btn-primary" style="flex:2;padding:13px;font-size:13px" onclick="toast('📢 招新公告已发布！');back()">发布公告</div>
+      </div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       D6 — APPLICATIONS
+  ════════════════════════════ -->
+  <div class="screen" id="s-applications" data-sb="light">
+    <div class="back-row"><div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div><div class="page-title">报名表管理</div></div>
+    <div style="padding:12px 20px 8px;display:flex;gap:8px;align-items:center">
+      <div style="flex:1;background:var(--light);border-radius:11px;padding:9px 12px;display:flex;gap:8px;align-items:center">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <span style="font-size:13px;color:var(--text3)">搜索报名人</span>
+      </div>
+      <div style="background:var(--dark);color:#fff;padding:9px 14px;border-radius:11px;font-size:12px;font-weight:600;cursor:pointer" onclick="toast('导出中…')">导出</div>
+    </div>
+    <div style="display:flex;gap:8px;padding:0 20px 12px;overflow-x:auto;scrollbar-width:none">
+      <div class="filter-pill on">全部(28)</div>
+      <div class="filter-pill" onclick="toggleFilter(this)">待处理(20)</div>
+      <div class="filter-pill" onclick="toggleFilter(this)">已通过(6)</div>
+      <div class="filter-pill" onclick="toggleFilter(this)">未录取(2)</div>
+    </div>
+    <div style="padding:0 20px">
+      <div class="app-item"><div class="app-avatar" style="background:rgba(231,111,81,.1)">👩</div><div style="flex:1;min-width:0"><div class="app-name">张晓雨</div><div class="app-meta">外国语学院 大一 · 宣传部</div></div><div class="app-status as-new">待处理</div></div>
+      <div class="app-item"><div class="app-avatar" style="background:rgba(42,157,143,.1)">👨</div><div style="flex:1;min-width:0"><div class="app-name">李明哲</div><div class="app-meta">计算机学院 大一 · 演出部</div></div><div class="app-status as-new">待处理</div></div>
+      <div class="app-item"><div class="app-avatar" style="background:rgba(233,196,106,.15)">👩</div><div style="flex:1;min-width:0"><div class="app-name">刘思远</div><div class="app-meta">艺术学院 大二 · 舞美部</div></div><div class="app-status as-ok">已通过</div></div>
+      <div class="app-item"><div class="app-avatar" style="background:rgba(38,70,83,.08)">👨</div><div style="flex:1;min-width:0"><div class="app-name">陈瑞</div><div class="app-meta">中文系 大一 · 编剧部</div></div><div class="app-status as-new">待处理</div></div>
+      <div class="app-item"><div class="app-avatar" style="background:rgba(231,111,81,.1)">👩</div><div style="flex:1;min-width:0"><div class="app-name">王小雯</div><div class="app-meta">新闻系 大二 · 宣传部</div></div><div class="app-status as-ok">已通过</div></div>
+      <div class="app-item"><div class="app-avatar" style="background:rgba(42,157,143,.1)">👨</div><div style="flex:1;min-width:0"><div class="app-name">赵志远</div><div class="app-meta">经管学院 大一 · 演出部</div></div><div class="app-status as-new">待处理</div></div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       D7 — DATA STATS
+  ════════════════════════════ -->
+  <div class="screen" id="s-stats" data-sb="light">
+    <div class="back-row"><div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div><div class="page-title">数据统计</div></div>
+    <div style="padding:14px 20px 0">
+      <div style="display:flex;gap:10px;margin-bottom:14px">
+        <div style="flex:1;background:var(--white);border-radius:14px;padding:14px;box-shadow:0 2px 10px rgba(38,70,83,.06)">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">本周主页访问</div>
+          <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--text)">1,284</div>
+          <div style="font-size:11px;color:var(--teal);font-weight:600">↑ 23%</div>
+        </div>
+        <div style="flex:1;background:var(--white);border-radius:14px;padding:14px;box-shadow:0 2px 10px rgba(38,70,83,.06)">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">报名转化率</div>
+          <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--text)">4.7%</div>
+          <div style="font-size:11px;color:var(--teal);font-weight:600">↑ 1.2%</div>
+        </div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">近7天访问量</div>
+      <div class="bar-chart">
+        <div class="bar-wrap"><div class="bar" style="height:40%;background:rgba(233,196,106,.4)"></div><div class="bar-lb">Mon</div></div>
+        <div class="bar-wrap"><div class="bar" style="height:55%;background:rgba(233,196,106,.5)"></div><div class="bar-lb">Tue</div></div>
+        <div class="bar-wrap"><div class="bar" style="height:45%;background:rgba(233,196,106,.45)"></div><div class="bar-lb">Wed</div></div>
+        <div class="bar-wrap"><div class="bar" style="height:70%;background:rgba(244,162,97,.6)"></div><div class="bar-lb">Thu</div></div>
+        <div class="bar-wrap"><div class="bar" style="height:85%;background:rgba(231,111,81,.7)"></div><div class="bar-lb">Fri</div></div>
+        <div class="bar-wrap"><div class="bar" style="height:100%;background:var(--coral)"></div><div class="bar-lb">Sat</div></div>
+        <div class="bar-wrap"><div class="bar" style="height:78%;background:rgba(244,162,97,.7)"></div><div class="bar-lb">Sun</div></div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">流量来源</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px"><span>智能匹配推荐</span><span style="font-weight:600">41%</span></div><div style="height:6px;background:var(--light);border-radius:3px"><div style="height:100%;width:41%;background:var(--teal);border-radius:3px"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px"><span>Explore 首页</span><span style="font-weight:600">28%</span></div><div style="height:6px;background:var(--light);border-radius:3px"><div style="height:100%;width:28%;background:var(--gold);border-radius:3px"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px"><span>搜索</span><span style="font-weight:600">18%</span></div><div style="height:6px;background:var(--light);border-radius:3px"><div style="height:100%;width:18%;background:var(--peach);border-radius:3px"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px"><span>外部分享</span><span style="font-weight:600">13%</span></div><div style="height:6px;background:var(--light);border-radius:3px"><div style="height:100%;width:13%;background:var(--coral);border-radius:3px"></div></div></div>
+      </div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       D8 — FAQ MANAGE
+  ════════════════════════════ -->
+  <div class="screen" id="s-faq" data-sb="light">
+    <div class="back-row"><div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div><div class="page-title">FAQ / 留言管理</div></div>
+    <div style="padding:14px 20px 8px;display:flex;gap:8px">
+      <div class="filter-pill on">全部(12)</div>
+      <div class="filter-pill" onclick="toggleFilter(this)">待回复(5)</div>
+      <div class="filter-pill" onclick="toggleFilter(this)">已回复(7)</div>
+    </div>
+    <div style="padding:8px 20px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">常见问题预设</div>
+      <div class="faq-item open" onclick="this.classList.toggle('open')">
+        <div class="faq-q"><span>零基础可以加入吗？</span><span>▾</span></div>
+        <div class="faq-a">完全可以！我们欢迎所有对表演感兴趣的同学，会在新成员培训中从基础开始。</div>
+      </div>
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-q"><span>排练时间如何安排？</span><span>▾</span></div>
+        <div class="faq-a">固定每周三晚19:00-21:00，演出季会增加额外排练时间，会提前通知。</div>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 8px">用户留言</div>
+      <div class="pend-item" onclick="toast('回复功能开发中')">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--coral);flex-shrink:0"></div>
+        <div style="flex:1;min-width:0"><div class="pend-name">王小雯</div><div class="pend-meta">请问排练时间如何安排？</div></div>
+        <div style="font-size:11px;color:var(--coral);font-weight:500">回复</div>
+      </div>
+      <div class="pend-item" onclick="toast('回复功能开发中')">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--coral);flex-shrink:0"></div>
+        <div style="flex:1;min-width:0"><div class="pend-name">匿名同学</div><div class="pend-meta">男生也可以报名吗？</div></div>
+        <div style="font-size:11px;color:var(--coral);font-weight:500">回复</div>
+      </div>
+      <div class="pend-item" onclick="toast('已回复')">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--teal);flex-shrink:0"></div>
+        <div style="flex:1;min-width:0"><div class="pend-name">陈瑞</div><div class="pend-meta">编剧部需要写过剧本吗？</div></div>
+        <div style="font-size:11px;color:var(--teal);font-weight:500">已回</div>
+      </div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       E1 — MESSAGES
+  ════════════════════════════ -->
+  <div class="screen" id="s-messages" data-sb="light">
+    <div style="background:var(--white);padding:14px 20px 16px;border-bottom:1px solid rgba(38,70,83,.06)">
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--text)">消息中心</div>
+    </div>
+    <div style="padding:14px 20px">
+      <div class="msg-item" onclick="go('s-msg-detail')">
+        <div class="msg-avatar" style="background:rgba(38,70,83,.08)">🎭</div>
+        <div style="flex:1;min-width:0"><div class="msg-name">校园戏剧社</div><div class="msg-preview">感谢你的咨询！我们欢迎零基础同学，请放心报名…</div></div>
+        <div class="msg-time">10:32</div>
+      </div>
+      <div class="msg-item" onclick="go('s-msg-detail')">
+        <div class="msg-avatar" style="background:rgba(42,157,143,.1)">🌿</div>
+        <div style="flex:1;min-width:0"><div class="msg-name">环保公益社</div><div class="msg-preview">Hi！我们的宣传部特别欢迎你这样的同学…</div></div>
+        <div class="msg-time">昨天</div>
+        <div class="msg-unread"></div>
+      </div>
+      <div class="msg-item" onclick="go('s-msg-detail')">
+        <div class="msg-avatar" style="background:rgba(233,196,106,.15)">📻</div>
+        <div style="flex:1;min-width:0"><div class="msg-name">校园广播站</div><div class="msg-preview">你的问题很好！播音部不需要播音专业背景…</div></div>
+        <div class="msg-time">周一</div>
+      </div>
+      <div class="msg-item" onclick="go('s-msg-detail')">
+        <div class="msg-avatar" style="background:rgba(231,111,81,.1)">🏆</div>
+        <div style="flex:1;min-width:0"><div class="msg-name">辩论队</div><div class="msg-preview">招募已截止，欢迎关注明年春季招募！</div></div>
+        <div class="msg-time">上周</div>
+      </div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       E2 — MSG DETAIL
+  ════════════════════════════ -->
+  <div class="screen" id="s-msg-detail" data-sb="light">
+    <div class="msgd-header">
+      <div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2.2" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+      <div class="msgd-avatar" style="background:rgba(38,70,83,.08)">🎭</div>
+      <div style="flex:1"><div class="msgd-name">校园戏剧社</div><div class="msgd-status">通常在24小时内回复</div></div>
+      <div onclick="go('s-club')" style="font-size:12px;color:var(--coral);font-weight:500;cursor:pointer">查看主页</div>
+    </div>
+    <div class="msg-bubbles">
+      <div class="bubble-row">
+        <div class="bubble-av">🎭</div>
+        <div class="bubble them">你好！欢迎咨询校园戏剧社 🎭<br>有什么想了解的吗？</div>
+      </div>
+      <div class="bubble-row me">
+        <div class="bubble-av">😊</div>
+        <div class="bubble me">请问零基础可以报名演出部吗？我在高中没有表演经验</div>
+      </div>
+      <div class="bubble-row">
+        <div class="bubble-av">🎭</div>
+        <div class="bubble them">完全可以！我们特别欢迎零基础的同学，我们相信热情比经验更重要 ✨<br><br>我们会在入社后安排系统的基础训练，请放心报名！</div>
+      </div>
+      <div class="bubble-row me">
+        <div class="bubble-av">😊</div>
+        <div class="bubble me">太好了！那每周的时间要求大概是多少呢</div>
+      </div>
+      <div class="bubble-row">
+        <div class="bubble-av">🎭</div>
+        <div class="bubble them">固定每周三晚19:00-21:00排练，演出季前2-3周会增加频率，其余时间比较灵活 🙌</div>
+      </div>
+    </div>
+    <div class="msg-input-bar">
+      <input class="msg-input" placeholder="输入消息…">
+      <div class="msg-send" onclick="toast('消息已发送')"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════
+       E3 — PROFILE
+  ════════════════════════════ -->
+  <div class="screen" id="s-profile" data-sb="dark">
+    <div class="profile-hero">
+      <div class="ph-glow"></div>
+      <div class="ph-top">
+        <div class="ph-av">😊</div>
+        <div class="ph-settings" onclick="go('s-settings')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+      </div>
+      <div class="ph-name">林晓雨</div>
+      <div class="ph-bio">外国语学院 · 大一新生 · 喜欢艺术与表达</div>
+      <div class="ph-tags"><div class="ph-tag pht1">🌿 低门槛</div><div class="ph-tag pht2">⏱ 中等投入</div><div class="ph-tag pht3">🎨 兴趣探索</div></div>
+    </div>
+    <div class="profile-tabs">
+      <div class="ptab on" onclick="switchPtab(this,'profile-tab-content','ptab-fav')">收藏</div>
+      <div class="ptab" onclick="switchPtab(this,'profile-tab-content','ptab-apply')">报名</div>
+      <div class="ptab" onclick="switchPtab(this,'profile-tab-content','ptab-history')">浏览</div>
+      <div class="ptab" onclick="switchPtab(this,'profile-tab-content','ptab-msg')">提问</div>
+    </div>
+    <div id="profile-tab-content">
+      <div id="ptab-fav" style="padding:14px 20px">
+        <div class="profile-list-item" onclick="go('s-club')"><div class="pli-icon" style="background:rgba(38,70,83,.07)">🎭</div><div style="flex:1;min-width:0"><div class="pli-name">校园戏剧社</div><div class="pli-meta">艺术 · 低门槛</div></div><svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+        <div class="profile-list-item" onclick="go('s-club')"><div class="pli-icon" style="background:rgba(42,157,143,.1)">📻</div><div style="flex:1;min-width:0"><div class="pli-name">校园广播站</div><div class="pli-meta">媒体 · 弹性时间</div></div><svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+        <div class="profile-list-item" onclick="go('s-club')"><div class="pli-icon" style="background:rgba(233,196,106,.15)">📸</div><div style="flex:1;min-width:0"><div class="pli-name">摄影协会</div><div class="pli-meta">艺术 · 中等投入</div></div><svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+      </div>
+      <div id="ptab-apply" style="display:none;padding:14px 20px">
+        <div class="profile-list-item" onclick="go('s-apply-success')"><div class="pli-icon" style="background:rgba(38,70,83,.07)">🎭</div><div style="flex:1;min-width:0"><div class="pli-name">校园戏剧社</div><div class="pli-meta">演出部 · 10月25日截止</div></div><div class="pli-status ps-pending">待审核</div></div>
+        <div class="profile-list-item"><div class="pli-icon" style="background:rgba(231,111,81,.1)">🏆</div><div style="flex:1;min-width:0"><div class="pli-name">辩论队</div><div class="pli-meta">辩手方向 · 已结束</div></div><div class="pli-status" style="background:rgba(38,70,83,.07);color:var(--text3)">未录取</div></div>
+      </div>
+      <div id="ptab-history" style="display:none;padding:14px 20px">
+        <div class="profile-list-item" onclick="go('s-club')"><div class="pli-icon" style="background:rgba(38,70,83,.07)">🎭</div><div style="flex:1;min-width:0"><div class="pli-name">校园戏剧社</div><div class="pli-meta">今天 10:30 浏览</div></div></div>
+        <div class="profile-list-item" onclick="go('s-activity')"><div class="pli-icon" style="background:rgba(38,70,83,.06)">📅</div><div style="flex:1;min-width:0"><div class="pli-name">《等待戈多》公演</div><div class="pli-meta">今天 10:25 浏览</div></div></div>
+        <div class="profile-list-item" onclick="go('s-club')"><div class="pli-icon" style="background:rgba(42,157,143,.1)">📻</div><div style="flex:1;min-width:0"><div class="pli-name">校园广播站</div><div class="pli-meta">昨天 15:10 浏览</div></div></div>
+      </div>
+      <div id="ptab-msg" style="display:none;padding:14px 20px">
+        <div class="profile-list-item" onclick="go('s-msg-detail')"><div class="pli-icon" style="background:rgba(38,70,83,.07)">🎭</div><div style="flex:1;min-width:0"><div class="pli-name">校园戏剧社</div><div class="pli-meta">已回复 · 今天</div></div><div class="pli-status ps-done">已回</div></div>
+        <div class="profile-list-item" onclick="go('s-msg-detail')"><div class="pli-icon" style="background:rgba(42,157,143,.1)">🌿</div><div style="flex:1;min-width:0"><div class="pli-name">环保公益社</div><div class="pli-meta">已回复 · 昨天</div></div><div class="pli-status ps-done">已回</div></div>
+      </div>
+    </div>
+    <!-- Switch to club admin -->
+    <div style="margin:16px 20px;background:linear-gradient(135deg,rgba(42,157,143,.08),rgba(38,70,83,.05));border:1.5px dashed rgba(42,157,143,.3);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="go('s-manage')">
+      <div style="width:38px;height:38px;border-radius:11px;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:18px">🏛️</div>
+      <div style="flex:1"><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--teal)">切换到社团管理身份</div><div style="font-size:12px;color:var(--text2)">你也是某社团的管理员</div></div>
+      <svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       SETTINGS
+  ════════════════════════════ -->
+  <div class="screen" id="s-settings" data-sb="light">
+    <div class="back-row" style="margin-bottom:8px"><div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div><div class="page-title">设置</div></div>
+    <div class="settings-section-title">账号</div>
+    <div style="background:var(--white);border-radius:16px;overflow:hidden;margin:0 20px">
+      <div class="settings-item" onclick="toast('编辑个人资料')"><div class="si-left"><div class="si-icon" style="background:rgba(244,162,97,.15)">👤</div><div><div class="si-title">个人资料</div><div class="si-sub">修改头像、昵称</div></div></div><div class="si-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div></div>
+      <div class="settings-item" onclick="toast('通知设置')"><div class="si-left"><div class="si-icon" style="background:rgba(42,157,143,.12)">🔔</div><div><div class="si-title">通知设置</div><div class="si-sub">消息、招新通知</div></div></div><div class="si-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div></div>
+      <div class="settings-item" onclick="go('s-manage')" style="border-bottom:none"><div class="si-left"><div class="si-icon" style="background:rgba(38,70,83,.08)">🏛️</div><div><div class="si-title">申请社团管理员认证</div><div class="si-sub">已有认证资格可直接切换</div></div></div><div class="si-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div></div>
+    </div>
+    <div class="settings-section-title">关于</div>
+    <div style="background:var(--white);border-radius:16px;overflow:hidden;margin:0 20px">
+      <div class="settings-item" onclick="toast('意见反馈已记录，感谢！')"><div class="si-left"><div class="si-icon" style="background:rgba(231,111,81,.1)">💬</div><div><div class="si-title">意见反馈</div></div></div><div class="si-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div></div>
+      <div class="settings-item" style="border-bottom:none" onclick="toast('版本 1.0.0')"><div class="si-left"><div class="si-icon" style="background:rgba(233,196,106,.15)">ℹ️</div><div><div class="si-title">关于 ClubMatch</div><div class="si-sub">版本 1.0.0</div></div></div><div class="si-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div></div>
+    </div>
+    <div style="padding:28px 20px;text-align:center"><div style="padding:14px;border-radius:14px;border:1.5px solid rgba(231,111,81,.3);color:var(--coral);font-family:'Syne',sans-serif;font-weight:700;font-size:14px;cursor:pointer" onclick="go('s-welcome')">退出登录</div></div>
+    <div class="pb-nav"></div>
+  </div>
+
+  </div><!-- /screens -->
+
+  <!-- BOTTOM NAV -->
+  <div id="bottomnav">
+    <div class="nv active" id="nav-explore" onclick="navGo('s-explore','nav-explore')">
+      <div class="nv-ic"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      <div class="nv-lb">Explore</div>
+    </div>
+    <div class="nv" id="nav-match" onclick="navGo('s-match-guide','nav-match')">
+      <div class="nv-ic"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+      <div class="nv-lb">Match</div>
+    </div>
+    <div class="nv" id="nav-messages" onclick="navGo('s-messages','nav-messages')">
+      <div class="nv-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <div class="nv-lb">Messages</div>
+    </div>
+    <div class="nv" id="nav-profile" onclick="navGo('s-profile','nav-profile')">
+      <div class="nv-ic"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+      <div class="nv-lb">Profile</div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+</div><!-- /phone -->
+</div><!-- /shell -->
+
+<script>
+/* ═══════════════════════════════════
+   NAVIGATION ENGINE
+═══════════════════════════════════ */
+const history_stack = ['s-welcome'];
+let current = 's-welcome';
+
+// screens that hide bottom nav
+const NO_NAV = new Set(['s-welcome','s-apply-success']);
+// screens with dark status bar
+const DARK_SB = new Set(['s-welcome','s-club','s-match-guide','s-match-result','s-manage','s-profile']);
+
+function go(id){
+  if(id === current) return;
+  const from = document.getElementById(current);
+  const to   = document.getElementById(id);
+  if(!to) return;
+
+  from.classList.remove('active');
+  to.classList.remove('slide-back');
+  to.classList.add('active');
+
+  history_stack.push(id);
+  current = id;
+  updateChrome(id);
+  to.scrollTop = 0;
+}
+
+function back(){
+  if(history_stack.length <= 1) return;
+  history_stack.pop();
+  const prev = history_stack[history_stack.length - 1];
+  const from = document.getElementById(current);
+  const to   = document.getElementById(prev);
+  if(!to) return;
+
+  from.classList.remove('active');
+  to.classList.add('slide-back','active');
+  setTimeout(()=>to.classList.remove('slide-back'),50);
+
+  current = prev;
+  updateChrome(prev);
+}
+
+function navGo(id, navId){
+  // clear history to root level
+  history_stack.length = 1;
+  history_stack[0] = id;
+  go(id);
+  document.querySelectorAll('.nv').forEach(n=>n.classList.remove('active'));
+  document.getElementById(navId)?.classList.add('active');
+}
+
+function updateChrome(id){
+  const sb = document.getElementById('statusbar');
+  const bn = document.getElementById('bottomnav');
+  // status bar
+  if(DARK_SB.has(id)){ sb.className='sb-dark'; }
+  else { sb.className='sb-light'; }
+  // bottom nav
+  if(NO_NAV.has(id)){ bn.style.display='none'; }
+  else { bn.style.display='flex'; }
+  // nav active state
+  const navMap = {
+    's-explore':'nav-explore','s-search':'nav-explore','s-club':'nav-explore',
+    's-activity':'nav-explore','s-recruit':'nav-explore','s-apply':'nav-explore','s-apply-success':'nav-explore',
+    's-match-guide':'nav-match','s-match-quiz':'nav-match','s-match-result':'nav-match',
+    's-messages':'nav-messages','s-msg-detail':'nav-messages',
+    's-profile':'nav-profile','s-settings':'nav-profile',
+    's-manage':'nav-match','s-edit-club':'nav-match','s-publish':'nav-match',
+    's-applications':'nav-match','s-stats':'nav-match','s-faq':'nav-match',
+  };
+  const navId = navMap[id];
+  document.querySelectorAll('.nv').forEach(n=>n.classList.remove('active'));
+  if(navId) document.getElementById(navId)?.classList.add('active');
+}
+
+/* ═══════════════════════════════════
+   TOAST
+═══════════════════════════════════ */
+let toastTimer;
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 2000);
+}
+
+/* ═══════════════════════════════════
+   MICRO INTERACTIONS
+═══════════════════════════════════ */
+function toggleOpt(el){
+  el.classList.toggle('on');
+}
+function toggleFilter(el){
+  el.closest('.filter-row, [style]').querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+}
+function toggleRtab(el){
+  el.closest('.result-tabs').querySelectorAll('.rtab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+}
+function switchCtab(el){
+  el.closest('.club-tabs').querySelectorAll('.ctab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+}
+function switchPtab(el, containerId, showId){
+  el.closest('.profile-tabs').querySelectorAll('.ptab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  const container = document.getElementById(containerId);
+  container.querySelectorAll('[id^="ptab-"]').forEach(d=>d.style.display='none');
+  document.getElementById(showId).style.display='block';
+}
+
+/* initial chrome */
+updateChrome('s-welcome');
+document.getElementById('bottomnav').style.display='none';
+</script>
+</body>
+</html>
