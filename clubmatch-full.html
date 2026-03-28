@@ -226,9 +226,13 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
 .mbanner-btn{background:var(--gold);color:var(--dark);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;padding:9px 14px;border-radius:18px;white-space:nowrap;cursor:pointer;position:relative;z-index:1;flex-shrink:0}
 
 /* horizontal club cards */
-.hscroll{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+.hscroll{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding:0 20px 12px 20px}
 .hscroll::-webkit-scrollbar{display:none}
-.club-card-h{flex-shrink:0;width:148px;background:var(--white);border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(38,70,83,.07);cursor:pointer}
+.club-card-h{flex-shrink:0;width:148px;background:var(--white);border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(38,70,83,.07);cursor:pointer;transition:opacity .2s ease}
+.club-card-h.hidden{display:none}
+.recruit-card.hidden{display:none}
+.act-card.hidden{display:none}
+.hidden{display:none}
 .cch-img{height:88px;display:flex;align-items:center;justify-content:center;font-size:30px}
 .cch-body{padding:10px 12px 12px}
 .cch-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
@@ -251,8 +255,8 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
    B2 — SEARCH
 ═══════════════════════════════════ */
 #s-search{background:var(--off)}
-.search-header{background:var(--white);padding:14px 20px 16px;border-bottom:1px solid rgba(38,70,83,.06)}
-.search-input-row{display:flex;align-items:center;gap:10px}
+.search-header{background:var(--white);padding:14px 0 0;border-bottom:1px solid rgba(38,70,83,.06)}
+.search-input-row{display:flex;align-items:center;gap:10px;padding:14px 20px 10px}
 .search-input-wrap{flex:1;display:flex;align-items:center;gap:9px;background:var(--light);border-radius:13px;padding:10px 14px}
 .search-input-wrap svg{width:16px;height:16px;stroke:var(--text3);fill:none;stroke-width:2;stroke-linecap:round;flex-shrink:0}
 .search-input-wrap input{border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;width:100%}
@@ -301,6 +305,9 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
 .ctab{flex:1;text-align:center;padding:12px 0;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;position:relative;letter-spacing:.02em}
 .ctab.on{color:var(--coral)}
 .ctab.on::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:2px;background:var(--coral);border-radius:2px 2px 0 0}
+.ctab-content{animation:.2s ease-in fadeIn}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.qa-answer{max-height:0;overflow:hidden;transition:.3s ease}
 .info-block{padding:16px 20px;background:var(--white);margin-bottom:8px}
 .ib-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px;text-transform:uppercase;letter-spacing:.07em}
 .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -650,21 +657,12 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
 
     <div class="chip-row" style="margin-bottom:14px" id="category-filter">
       <div class="chip on" onclick="filterByCategory(null, this)">全部</div>
-      <div class="chip off" onclick="filterByCategory('🎨 艺术', this)">🎨 艺术</div>
-      <div class="chip off" onclick="filterByCategory('⚽ 体育', this)">⚽ 体育</div>
-      <div class="chip off" onclick="filterByCategory('🔬 学术', this)">🔬 学术</div>
-      <div class="chip off" onclick="filterByCategory('💼 职业', this)">💼 职业</div>
-      <div class="chip off" onclick="filterByCategory('🌱 公益', this)">🌱 公益</div>
     </div>
 
     <div class="sec">
-      <div class="sec-hd"><div class="sec-title">🔥 热门社团</div><div class="sec-more" onclick="go('s-search')">查看全部</div></div>
-      <div class="hscroll">
-        <div class="club-card-h" onclick="go('s-club', {clubId:'drama'})"><div class="cch-img" style="background:linear-gradient(135deg,rgba(42,157,143,.12),rgba(42,157,143,.04))">🎭</div><div class="cch-body"><div class="cch-name">戏剧社</div><div class="cch-desc">表演、剧本、舞台制作</div><div class="cch-tags"><div class="mini-tag mini-warm">招新中</div><div class="mini-tag">低门槛</div></div></div></div>
-        <div class="club-card-h" onclick="go('s-club', {clubId:'photo'})"><div class="cch-img" style="background:linear-gradient(135deg,rgba(233,196,106,.15),rgba(244,162,97,.06))">📸</div><div class="cch-body"><div class="cch-name">摄影协会</div><div class="cch-desc">记录生活，展览作品</div><div class="cch-tags"><div class="mini-tag mini-warm">招新中</div><div class="mini-tag">中等投入</div></div></div></div>
-        <div class="club-card-h" onclick="go('s-club', {clubId:'coding'})"><div class="cch-img" style="background:linear-gradient(135deg,rgba(231,111,81,.1),rgba(244,162,97,.06))">💻</div><div class="cch-body"><div class="cch-name">计算机协会</div><div class="cch-desc">编程、竞赛、项目实战</div><div class="cch-tags"><div class="mini-tag">有门槛</div><div class="mini-tag">高投入</div></div></div></div>
-        <div class="club-card-h" onclick="go('s-club', {clubId:'green'})"><div class="cch-img" style="background:linear-gradient(135deg,rgba(42,157,143,.08),rgba(38,70,83,.04))">🌿</div><div class="cch-body"><div class="cch-name">环保公益社</div><div class="cch-desc">公益、环境、社区活动</div><div class="cch-tags"><div class="mini-tag mini-warm">招新中</div><div class="mini-tag">低门槛</div></div></div></div>
-      </div>
+      <div class="sec-hd"><div class="sec-title">🔥 热门社团</div><div class="sec-more" onclick="expandAllClubs()">查看全部</div></div>
+      <div class="hscroll" id="clubs-container"></div>
+      <div style="padding:14px 20px;display:none" id="all-clubs-list"></div>
     </div>
 
     <div class="sec" style="margin-top:18px">
@@ -719,40 +717,26 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
       <div class="search-input-row">
         <div class="search-input-wrap">
           <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input placeholder="搜索社团、活动…" value="戏剧">
+          <input placeholder="搜索社团、活动…" value="" id="search-input">
         </div>
         <div class="search-cancel" onclick="back()">取消</div>
       </div>
-      <div class="filter-row">
-        <div class="filter-pill on">全部</div>
-        <div class="filter-pill" onclick="toggleFilter(this)">正在招新</div>
-        <div class="filter-pill" onclick="toggleFilter(this)">低门槛</div>
-        <div class="filter-pill" onclick="toggleFilter(this)">中等投入</div>
-        <div class="filter-pill" onclick="toggleFilter(this)">艺术类</div>
+      <div class="hscroll" id="type-filter">
+        <div class="filter-pill on" onclick="filterByType('all', this)">全部</div>
+        <div class="filter-pill" onclick="filterByType('club', this)">社团</div>
+        <div class="filter-pill" onclick="filterByType('activity', this)">活动</div>
+      </div>
+      <div class="hscroll">
+        <div class="filter-pill on" onclick="filterSearchResults(null, this)">全部</div>
+        <div class="filter-pill" onclick="filterSearchResults('招新', this)">正在招新</div>
+        <div class="filter-pill" onclick="filterSearchResults('低门槛', this)">低门槛</div>
+        <div class="filter-pill" onclick="filterSearchResults('艺术', this)">艺术类</div>
+        <div class="filter-pill" onclick="filterSearchResults('学术', this)">学术类</div>
+        <div class="filter-pill" onclick="filterSearchResults('职业', this)">职业类</div>
+        <div class="filter-pill" onclick="filterSearchResults('公益', this)">公益类</div>
       </div>
     </div>
-    <div class="result-tabs">
-      <div class="rtab on">社团 (4)</div>
-      <div class="rtab" onclick="toggleRtab(this)">活动 (2)</div>
-      <div class="rtab" onclick="toggleRtab(this)">招新 (3)</div>
-    </div>
-    <div style="padding:14px 20px">
-      <div class="recruit-card" onclick="go('s-club', {clubId:'drama'})">
-        <div class="recruit-emoji" style="background:rgba(38,70,83,.08)">🎭</div>
-        <div style="flex:1;min-width:0"><div class="recruit-org">艺术 · 表演</div><div class="recruit-title">校园戏剧社</div><div class="recruit-meta"><div class="mini-tag mini-warm" style="font-size:11px;padding:3px 8px">招新中</div><div class="recruit-dept">低门槛 · 每周3小时</div></div></div>
-      </div>
-      <div class="recruit-card" onclick="go('s-club', {clubId:'guitar'})">
-        <div class="recruit-emoji" style="background:rgba(233,196,106,.15)">🎵</div>
-        <div style="flex:1;min-width:0"><div class="recruit-org">音乐 · 表演</div><div class="recruit-title">吉他社</div><div class="recruit-meta"><div class="mini-tag mini-warm" style="font-size:11px;padding:3px 8px">招新中</div><div class="recruit-dept">低门槛 · 每周2小时</div></div></div>
-      </div>
-      <div class="recruit-card" onclick="go('s-club', {clubId:'broadcast'})">
-        <div class="recruit-emoji" style="background:rgba(42,157,143,.1)">📻</div>
-        <div style="flex:1;min-width:0"><div class="recruit-org">媒体 · 播音</div><div class="recruit-title">校园广播站</div><div class="recruit-meta"><div class="mini-tag" style="font-size:11px;padding:3px 8px">招新已结束</div><div class="recruit-dept">低门槛 · 弹性时间</div></div></div>
-      </div>
-      <div class="recruit-card" onclick="go('s-club', {clubId:'literature'})">
-        <div class="recruit-emoji" style="background:rgba(231,111,81,.1)">📰</div>
-        <div style="flex:1;min-width:0"><div class="recruit-org">媒体 · 写作</div><div class="recruit-title">校园文学社</div><div class="recruit-meta"><div class="mini-tag mini-warm" style="font-size:11px;padding:3px 8px">招新中</div><div class="recruit-dept">低门槛 · 每周2小时</div></div></div>
-      </div>
+    <div style="padding:14px 20px" id="search-results-container">
     </div>
     <div class="pb-nav"></div>
   </div>
@@ -795,35 +779,55 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
     </div>
 
     <div class="club-tabs">
-      <div class="ctab on" onclick="switchCtab(this)">概览</div>
-      <div class="ctab" onclick="switchCtab(this)">招新</div>
-      <div class="ctab" onclick="switchCtab(this)">活动</div>
-      <div class="ctab" onclick="switchCtab(this)">问答</div>
+      <div class="ctab on" onclick="switchCtab(this, 'overview')">概览</div>
+      <div class="ctab" onclick="switchCtab(this, 'recruitment')">招新</div>
+      <div class="ctab" onclick="switchCtab(this, 'activities')">活动</div>
+      <div class="ctab" onclick="switchCtab(this, 'qa')">问答</div>
     </div>
 
-    <div class="info-block">
-      <div class="ib-title">基本信息</div>
-      <div class="info-grid">
-        <div class="ig-item"><div class="ig-lb">活动时间</div><div class="ig-val">每周三晚19:00</div></div>
-        <div class="ig-item"><div class="ig-lb">时间投入</div><div class="ig-val">每周3-5小时</div></div>
-        <div class="ig-item"><div class="ig-lb">加入门槛</div><div class="ig-val">零基础欢迎</div></div>
-        <div class="ig-item"><div class="ig-lb">规模</div><div class="ig-val">中型 50-200人</div></div>
+    <!-- 概览标签页 -->
+    <div id="ctab-overview" class="ctab-content" style="display:block">
+      <div class="info-block">
+        <div class="ib-title">基本信息</div>
+        <div class="info-grid">
+          <div class="ig-item"><div class="ig-lb">活动时间</div><div class="ig-val">每周三晚19:00</div></div>
+          <div class="ig-item"><div class="ig-lb">时间投入</div><div class="ig-val">每周3-5小时</div></div>
+          <div class="ig-item"><div class="ig-lb">加入门槛</div><div class="ig-val">零基础欢迎</div></div>
+          <div class="ig-item"><div class="ig-lb">规模</div><div class="ig-val">中型 50-200人</div></div>
+        </div>
+      </div>
+      <div class="info-block">
+        <div class="ib-title">标签</div>
+        <div class="tag-grid"><span class="tag tag-teal">🎭 舞台表演</span><span class="tag tag-peach">✍️ 剧本创作</span><span class="tag tag-coral">👥 团队协作</span><span class="tag tag-gold">🏆 年度公演</span><span class="tag tag-gray">低门槛</span><span class="tag tag-warm">表达型</span></div>
+      </div>
+      <div class="info-block">
+        <div class="ib-title">社团简介</div>
+        <div class="body-text">校园戏剧社成立于2021年，致力于为热爱表演艺术的同学提供一个探索自我、展示才华的舞台。我们每学期举办两次公开演出，并不定期组织工作坊和观剧活动。无论你是零基础还是有表演经验，都真诚欢迎！</div>
       </div>
     </div>
-    <div class="info-block">
-      <div class="ib-title">标签</div>
-      <div class="tag-grid"><span class="tag tag-teal">🎭 舞台表演</span><span class="tag tag-peach">✍️ 剧本创作</span><span class="tag tag-coral">👥 团队协作</span><span class="tag tag-gold">🏆 年度公演</span><span class="tag tag-gray">低门槛</span><span class="tag tag-warm">表达型</span></div>
-    </div>
-    <div class="info-block">
-      <div class="ib-title">社团简介</div>
-      <div class="body-text">校园戏剧社成立于2021年，致力于为热爱表演艺术的同学提供一个探索自我、展示才华的舞台。我们每学期举办两次公开演出，并不定期组织工作坊和观剧活动。无论你是零基础还是有表演经验，都真诚欢迎！</div>
-    </div>
-    <div class="info-block">
-      <div class="ib-title">近期招新</div>
-      <div class="recruit-card" style="margin-bottom:0" onclick="go('s-recruit')">
-        <div class="recruit-emoji" style="background:rgba(231,111,81,.1)">🎭</div>
-        <div style="flex:1;min-width:0"><div class="recruit-org">校园戏剧社</div><div class="recruit-title">2024秋季招募 · 全方向开放</div><div class="recruit-meta"><div class="recruit-deadline">⏰ 10月25日截止</div><div class="recruit-dept">演出/编剧/舞台/宣传</div></div></div>
+
+    <!-- 招新标签页 -->
+    <div id="ctab-recruitment" class="ctab-content" style="display:none">
+      <div class="info-block">
+        <div class="ib-title">近期招新</div>
+        <div class="recruit-card" style="margin-bottom:0" onclick="go('s-recruit')">
+          <div class="recruit-emoji" style="background:rgba(231,111,81,.1)">🎭</div>
+          <div style="flex:1;min-width:0"><div class="recruit-org">校园戏剧社</div><div class="recruit-title">2024秋季招募 · 全方向开放</div><div class="recruit-meta"><div class="recruit-deadline">⏰ 10月25日截止</div><div class="recruit-dept">演出/编剧/舞台/宣传</div></div></div>
+        </div>
       </div>
+    </div>
+
+    <!-- 活动标签页 -->
+    <div id="ctab-activities" class="ctab-content" style="display:none">
+      <div id="activities-list" class="info-block"></div>
+    </div>
+
+    <!-- 问答标签页 -->
+    <div id="ctab-qa" class="ctab-content" style="display:none">
+      <!-- 常见问答板块 -->
+      <div id="qa-faq-section"></div>
+      <!-- 用户问答板块 -->
+      <div id="qa-user-section" style="margin-top:20px"></div>
     </div>
 
     <div class="cta-bar">
@@ -837,9 +841,17 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
        B5 — ACTIVITY DETAIL
   ════════════════════════════ -->
   <div class="screen" id="s-activity" data-sb="dark">
-    <div class="act-hero" style="background:linear-gradient(145deg,#264653,#1B3A44)">
-      <div class="act-hero-back" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
-      <span class="act-emoji">🎭</span>
+    <div class="act-hero-container" style="background:linear-gradient(145deg,#264653,#1B3A44);padding:20px;position:relative;min-height:160px;display:flex;flex-direction:column;justify-content:flex-end">
+      <div class="hero-top-btns">
+        <div class="hero-back" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+        <div class="hero-actions">
+          <div class="hero-act" id="activity-heart-btn" onclick="toggleActivityLike(this)"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+          <div class="hero-act" onclick="toast('链接已复制')"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div>
+        </div>
+      </div>
+      <div style="text-align:center;position:relative;z-index:1">
+        <span class="act-emoji" style="font-size:64px;display:block">🎭</span>
+      </div>
     </div>
     <div class="info-block" style="margin-top:0;background:var(--white)">
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><span class="act-category-tag tag tag-coral">公开演出</span><span class="act-free-tag tag tag-teal">免费入场</span></div>
@@ -1020,15 +1032,17 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
       <div class="mq-glabel">兴趣方向</div>
       <div class="mq-question">你最感兴趣的活动类型是什么？</div>
       <div class="option-list">
-        <div class="opt" onclick="switchQuiz(1, this)"><div class="opt-emoji">🎨</div><div class="opt-text">艺术与创意（表演、美术、音乐）</div><div class="opt-check"></div></div>
-        <div class="opt" onclick="switchQuiz(1, this)"><div class="opt-emoji">⚽</div><div class="opt-text">体育与竞技</div><div class="opt-check"></div></div>
-        <div class="opt" onclick="switchQuiz(1, this)"><div class="opt-emoji">🔬</div><div class="opt-text">学术与研究</div><div class="opt-check"></div></div>
-        <div class="opt" onclick="switchQuiz(1, this)"><div class="opt-emoji">🌱</div><div class="opt-text">公益与服务</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(1, '艺术与创意', this)"><div class="opt-emoji">🎨</div><div class="opt-text">艺术与创意（表演、美术、音乐）</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(1, '体育与竞技', this)"><div class="opt-emoji">⚽</div><div class="opt-text">体育与竞技</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(1, '学术与研究', this)"><div class="opt-emoji">🔬</div><div class="opt-text">学术与研究</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(1, '公益与服务', this)"><div class="opt-emoji">🌱</div><div class="opt-text">公益与服务</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleOtherInput(1, this)"><div class="opt-emoji">✍️</div><div class="opt-text" id="q1-other-label">其他（请填写）</div><div class="opt-check"></div></div>
+        <input type="text" class="other-input" id="q1-other-input" placeholder="请输入自定义答案 (必填)" style="display:none;margin-top:10px;padding:8px;border:1px solid var(--light);border-radius:6px;font-size:14px;border-color:var(--coral)" required>
       </div>
     </div>
     <div class="mq-footer">
       <div class="mq-prev" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
-      <div class="mq-next" onclick="go('s-match-quiz-2')">下一步 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      <div class="mq-next" onclick="nextMatchQuestion(1, 2)">下一步 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
     </div>
   </div>
 
@@ -1044,17 +1058,19 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
     </div>
     <div class="mq-body">
       <div class="mq-glabel">参与目标</div>
-      <div class="mq-question">加入社团，你最希望获得什么？</div>
+      <div class="mq-question">加入社团，你最希望获得什么？（可多选）</div>
       <div class="option-list">
-        <div class="opt on" onclick="toggleOpt(this)"><div class="opt-emoji">👥</div><div class="opt-text">认识更多朋友，扩大社交圈</div><div class="opt-check"></div></div>
-        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">🎯</div><div class="opt-text">培养兴趣爱好，丰富课外生活</div><div class="opt-check"></div></div>
-        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">📄</div><div class="opt-text">积累实践经验，充实简历</div><div class="opt-check"></div></div>
-        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">🏆</div><div class="opt-text">参与比赛，挑战自我</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleMultiOption(2, '认识朋友', this)"><div class="opt-emoji">👥</div><div class="opt-text">认识更多朋友，扩大社交圈</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleMultiOption(2, '培养兴趣', this)"><div class="opt-emoji">🎯</div><div class="opt-text">培养兴趣爱好，丰富课外生活</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleMultiOption(2, '积累经验', this)"><div class="opt-emoji">📄</div><div class="opt-text">积累实践经验，充实简历</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleMultiOption(2, '参与比赛', this)"><div class="opt-emoji">🏆</div><div class="opt-text">参与比赛，挑战自我</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleOtherInput(2, this)"><div class="opt-emoji">✍️</div><div class="opt-text" id="q2-other-label">其他（请填写）</div><div class="opt-check"></div></div>
+        <input type="text" class="other-input" id="q2-other-input" placeholder="请输入自定义答案 (必填)" style="display:none;margin-top:10px;padding:8px;border:1px solid var(--light);border-radius:6px;font-size:14px;border-color:var(--coral)" required>
       </div>
     </div>
     <div class="mq-footer">
       <div class="mq-prev" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
-      <div class="mq-next" onclick="go('s-match-quiz-3')">下一步 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      <div class="mq-next" onclick="nextMatchQuestion(2, 3)">下一步 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
     </div>
   </div>
 
@@ -1072,15 +1088,17 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
       <div class="mq-glabel">时间投入</div>
       <div class="mq-question">你每周能投入多少时间在社团活动中？</div>
       <div class="option-list">
-        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">🕐</div><div class="opt-text">1-2小时，仅周末参加</div><div class="opt-check"></div></div>
-        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">📅</div><div class="opt-text">3-5小时，参加主要活动</div><div class="opt-check"></div></div>
-        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">⏳</div><div class="opt-text">5小时以上，投入度高</div><div class="opt-check"></div></div>
-        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">🎯</div><div class="opt-text">时间灵活，按需参加</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(3, '1-2小时', this)"><div class="opt-emoji">🕐</div><div class="opt-text">1-2小时，仅周末参加</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(3, '3-5小时', this)"><div class="opt-emoji">📅</div><div class="opt-text">3-5小时，参加主要活动</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(3, '5小时以上', this)"><div class="opt-emoji">⏳</div><div class="opt-text">5小时以上，投入度高</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(3, '时间灵活', this)"><div class="opt-emoji">🎯</div><div class="opt-text">时间灵活，按需参加</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleOtherInput(3, this)"><div class="opt-emoji">✍️</div><div class="opt-text" id="q3-other-label">其他（请填写）</div><div class="opt-check"></div></div>
+        <input type="text" class="other-input" id="q3-other-input" placeholder="请输入自定义答案 (必填)" style="display:none;margin-top:10px;padding:8px;border:1px solid var(--light);border-radius:6px;font-size:14px;border-color:var(--coral)" required>
       </div>
     </div>
     <div class="mq-footer">
-      <div class="mq-prev" onclick="showMatchQuestion(2)"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
-      <div class="mq-next" onclick="showMatchQuestion(4)">下一步 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      <div class="mq-prev" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+      <div class="mq-next" onclick="nextMatchQuestion(3, 4)">下一步 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
     </div>
   </div>
 
@@ -1098,15 +1116,17 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
       <div class="mq-glabel">参加经验</div>
       <div class="mq-question">你是否有相关领域的参与经验？</div>
       <div class="option-list">
-        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">🌱</div><div class="opt-text">完全零基础，想全新尝试</div><div class="opt-check"></div></div>
-        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">🌿</div><div class="opt-text">有一点基础或兴趣</div><div class="opt-check"></div></div>
-        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">🌳</div><div class="opt-text">有较多相关经验</div><div class="opt-check"></div></div>
-        <div class="opt" onclick="toggleOpt(this)"><div class="opt-emoji">🎖️</div><div class="opt-text">高手或获过奖</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(4, '完全零基础', this)"><div class="opt-emoji">🌱</div><div class="opt-text">完全零基础，想全新尝试</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(4, '有一点基础', this)"><div class="opt-emoji">🌿</div><div class="opt-text">有一点基础或兴趣</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(4, '有较多经验', this)"><div class="opt-emoji">🌳</div><div class="opt-text">有较多相关经验</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(4, '高手或获奖', this)"><div class="opt-emoji">🎖️</div><div class="opt-text">高手或获过奖</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleOtherInput(4, this)"><div class="opt-emoji">✍️</div><div class="opt-text" id="q4-other-label">其他（请填写）</div><div class="opt-check"></div></div>
+        <input type="text" class="other-input" id="q4-other-input" placeholder="请输入自定义答案 (必填)" style="display:none;margin-top:10px;padding:8px;border:1px solid var(--light);border-radius:6px;font-size:14px;border-color:var(--coral)" required>
       </div>
     </div>
     <div class="mq-footer">
       <div class="mq-prev" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
-      <div class="mq-next" onclick="go('s-match-result')">查看结果 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      <div class="mq-next" onclick="completeMatchQuiz()">查看结果 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
     </div>
   </div>
 
@@ -1119,7 +1139,7 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
       <div class="mr-top">
         <div class="mq-back" style="background:rgba(255,255,255,.12)" onclick="back()"><svg viewBox="0 0 24 24" stroke="white"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
         <div class="mr-title">✨ 你的匹配结果</div>
-        <div class="mr-redo" onclick="go('s-match-quiz')">重新测试</div>
+        <div class="mr-redo" onclick="clearAndRestartQuiz()">重新测试</div>
       </div>
       <div class="persona-card">
         <div class="persona-lb">你的偏好画像</div>
@@ -1131,7 +1151,7 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
         </div>
       </div>
     </div>
-    <div class="result-list">
+    <div class="result-list" id="match-result-list">
       <div class="rl-title">为你推荐的社团</div>
       <div class="rc r1" onclick="go('s-club', {clubId:'drama'})">
         <div class="rc-top"><div class="rc-emoji" style="background:rgba(233,196,106,.15)">🎭</div><div class="rc-name">校园戏剧社</div><div class="rc-badge rcb-high">87%</div></div>
@@ -1382,29 +1402,7 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
     <div style="background:var(--white);padding:14px 20px 16px;border-bottom:1px solid rgba(38,70,83,.06)">
       <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--text)">消息中心</div>
     </div>
-    <div style="padding:14px 20px">
-      <div class="msg-item" onclick="go('s-msg-detail', {messageTarget:'drama'})">
-        <div class="msg-avatar" style="background:rgba(38,70,83,.08)">🎭</div>
-        <div style="flex:1;min-width:0"><div class="msg-name">校园戏剧社</div><div class="msg-preview">感谢你的咨询！我们欢迎零基础同学，请放心报名…</div></div>
-        <div class="msg-time">10:32</div>
-      </div>
-      <div class="msg-item" onclick="go('s-msg-detail', {messageTarget:'green'})">
-        <div class="msg-avatar" style="background:rgba(42,157,143,.1)">🌿</div>
-        <div style="flex:1;min-width:0"><div class="msg-name">环保公益社</div><div class="msg-preview">Hi！我们的宣传部特别欢迎你这样的同学…</div></div>
-        <div class="msg-time">昨天</div>
-        <div class="msg-unread"></div>
-      </div>
-      <div class="msg-item" onclick="go('s-msg-detail', {messageTarget:'broadcast'})">
-        <div class="msg-avatar" style="background:rgba(233,196,106,.15)">📻</div>
-        <div style="flex:1;min-width:0"><div class="msg-name">校园广播站</div><div class="msg-preview">你的问题很好！播音部不需要播音专业背景…</div></div>
-        <div class="msg-time">周一</div>
-      </div>
-      <div class="msg-item" onclick="go('s-msg-detail', {messageTarget:'debate'})">
-        <div class="msg-avatar" style="background:rgba(231,111,81,.1)">🏆</div>
-        <div style="flex:1;min-width:0"><div class="msg-name">辩论队</div><div class="msg-preview">招募已截止，欢迎关注明年春季招募！</div></div>
-        <div class="msg-time">上周</div>
-      </div>
-    </div>
+    <div style="padding:14px 20px" id="messages-list-container"></div>
     <div class="pb-nav"></div>
   </div>
 
@@ -1441,8 +1439,8 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
       </div>
     </div>
     <div class="msg-input-bar">
-      <input class="msg-input" placeholder="输入消息…">
-      <div class="msg-send" onclick="toast('消息已发送')"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>
+      <input class="msg-input" placeholder="输入消息…" id="msg-input">
+      <div class="msg-send" onclick="submitQuestion()"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>
     </div>
   </div>
 
@@ -1478,10 +1476,7 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
         <div class="profile-list-item" onclick="go('s-activity')"><div class="pli-icon" style="background:rgba(38,70,83,.06)">📅</div><div style="flex:1;min-width:0"><div class="pli-name">《等待戈多》公演</div><div class="pli-meta">今天 10:25 浏览</div></div></div>
         <div class="profile-list-item" onclick="go('s-club')"><div class="pli-icon" style="background:rgba(42,157,143,.1)">📻</div><div style="flex:1;min-width:0"><div class="pli-name">校园广播站</div><div class="pli-meta">昨天 15:10 浏览</div></div></div>
       </div>
-      <div id="ptab-msg" style="display:none;padding:14px 20px">
-        <div class="profile-list-item" onclick="go('s-msg-detail')"><div class="pli-icon" style="background:rgba(38,70,83,.07)">🎭</div><div style="flex:1;min-width:0"><div class="pli-name">校园戏剧社</div><div class="pli-meta">已回复 · 今天</div></div><div class="pli-status ps-done">已回</div></div>
-        <div class="profile-list-item" onclick="go('s-msg-detail')"><div class="pli-icon" style="background:rgba(42,157,143,.1)">🌿</div><div style="flex:1;min-width:0"><div class="pli-name">环保公益社</div><div class="pli-meta">已回复 · 昨天</div></div><div class="pli-status ps-done">已回</div></div>
-      </div>
+      <div id="ptab-msg" style="display:none;padding:14px 20px"></div>
     </div>
     <!-- Switch to club admin -->
     <div style="margin:16px 20px;background:linear-gradient(135deg,rgba(42,157,143,.08),rgba(38,70,83,.05));border:1.5px dashed rgba(42,157,143,.3);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="go('s-manage')">
@@ -1620,94 +1615,13 @@ html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8
 
 <script src="js/clubs-data.js"></script>
 <script src="js/activities-data.js"></script>
+<script src="js/messages-data.js"></script>
 <script src="js/user-data.js"></script>
 <script>
 /* ═══════════════════════════════════
    DATA STRUCTURE
 ═══════════════════════════════════ */
 const DATA = {
-  clubs: {
-    'drama': {
-      id:'drama', name:'校园戏剧社', emoji:'🎭', slogan:'"让每个人都能登上舞台"', category:'🎨 艺术', 
-      members:156, history:'3年', events:12, rating:'4.9⭐',
-      founding:'2021年10月', scale:'150+', timeEnrollment:'每周3-5小时', threshold:'零基础欢迎',
-      description:'校园戏剧社致力于为热爱表演艺术的同学提供舞台。我们排演了《等待戈多》、《相见恨晚》等经典作品，参加过校园文化节和多次汇演。无论你是表演爱好者还是幕后工作者，这里都有你的位置。',
-      activities:['《等待戈多》秋季公演', '春季剧本工坊', '表演基础班'],
-      departments:['演出部', '编剧部', '舞美部', '宣传部'],
-      tags:['表演', '创意', '团队合作', '文艺'],
-      recruitment:{title:'2024秋季招募', deadline:'10月25日', departments:4, quota:30}
-    },
-    'photo': {
-      id:'photo', name:'摄影协会', emoji:'📸', slogan:'"记录生活，展览作品"', category:'🎨 艺术',
-      members:89, history:'2年', events:8, rating:'4.7⭐',
-      founding:'2022年9月', scale:'80+', timeEnrollment:'每周2-3小时', threshold:'零基础欢迎',
-      description:'摄影协会提供专业的摄影技能培训和创意分享平台。从基础构图到后期修图，我们带你发现生活中的美。每月举办采风活动和作品展览。',
-      activities:['秋日人像摄影工作坊', '校园风景采风活动', '修图技巧分享'],
-      departments:['技术部', '策划部', '宣传部'],
-      tags:['摄影', '艺术', '创意', '技能'],
-      recruitment:{title:'秋季招新-摄影爱好者', deadline:'10月20日', departments:3, quota:25}
-    },
-    'coding': {
-      id:'coding', name:'计算机协会', emoji:'💻', slogan:'"编程改变世界"', category:'🔬 学术',
-      members:124, history:'4年', events:15, rating:'4.8⭐',
-      founding:'2020年3月', scale:'120+', timeEnrollment:'每周5+小时', threshold:'有编程基础或强烈兴趣',
-      description:'计算机协会是学校最大的技术社团。我们组织编程竞赛、开源项目、技术分享会。无论是AI、Web开发还是算法优化，这里都有志同道合的伙伴。',
-      activities:['ACM编程竞赛集训', '开源项目实战', '技术分享论坛'],
-      departments:['算法部', '前端部', '后端部', '运维部'],
-      tags:['编程', '技术', '竞赛', '职业'],
-      recruitment:{title:'计算机协会新一届成员招募', deadline:'10月22日', departments:4, quota:40}
-    },
-    'green': {
-      id:'green', name:'环保公益社', emoji:'🌿', slogan:'"守护绿色地球"', category:'🌱 公益',
-      members:67, history:'1年', events:5, rating:'4.6⭐',
-      founding:'2023年10月', scale:'65+', timeEnrollment:'每周2-4小时', threshold:'有公益热心',
-      description:'环保公益社致力于推动校园可持续发展。我们组织垃圾分类活动、校园绿化、环保讲座。每参加一次活动，都在为地球做贡献。',
-      activities:['校园垃圾分类推广', '绿色宿舍建设项目', '环保知识讲座'],
-      departments:['宣传部', '项目部', '评估部'],
-      tags:['公益', '环保', '社会责任', '低投入'],
-      recruitment:{title:'环保公益社招新', deadline:'10月28日', departments:3, quota:20}
-    },
-    'guitar': {
-      id:'guitar', name:'吉他社', emoji:'🎵', slogan:'"弦音绕梦"', category:'🎨 艺术',
-      members:45, history:'2年', events:6, rating:'4.5⭐',
-      founding:'2022年5月', scale:'45+', timeEnrollment:'每周3小时', threshold:'零基础可学',
-      description:'吉他社教授吉他弹奏和音乐理论。从C调到高级指弹，从《同桌的你》到《演员》，我们的讲师会一步步教你成为吉他手。定期举办小型音乐会。',
-      activities:['初级吉他班开课', '弹唱表演会', '音乐理论工坊'],
-      departments:['教学部', '表演部', '宣传部'],
-      tags:['音乐', '乐器', '才艺', '放松'],
-      recruitment:{title:'吉他社新学员招募', deadline:'10月25日', departments:3, quota:15}
-    },
-    'broadcast': {
-      id:'broadcast', name:'校园广播站', emoji:'📻', slogan:'"声音传递温暖"', category:'💼 职业',
-      members:32, history:'5年', events:20, rating:'4.9⭐',
-      founding:'2019年9月', scale:'30+', timeEnrollment:'每周4-6小时', threshold:'有播音或编辑经验优先',
-      description:'校园广播站是学校最具影响力的媒体平台。我们制作校园新闻、主持校园人物故事、播放校园音乐。欢迎成为出镜主播或幕后制作人。',
-      activities:['新闻播报节目', '校园人物专访', '音乐推荐栏目'],
-      departments:['播音部', '编辑部', '技术部', '外联部'],
-      tags:['媒体', '表达', '传播', '职业'],
-      recruitment:{title:'校园广播站秋季主播和编辑招募', deadline:'10月15日', departments:4, quota:12}
-    },
-    'debate': {
-      id:'debate', name:'辩论队', emoji:'🏆', slogan:'"思辨引领未来"', category:'💼 职业',
-      members:28, history:'3年', events:10, rating:'4.7⭐',
-      founding:'2021年9月', scale:'28', timeEnrollment:'每周6+小时', threshold:'有辩论经验或强烈兴趣',
-      description:'校园辩论队参加各类校际辩论赛。我们打造逻辑清晰、表达有力的辩手。通过辩论，你将学会分析问题、说服他人。这是一个充满挑战和成就感的平台。',
-      activities:['校际辩论邀请赛参赛', '辩题研讨工作坊', '内部友谊赛'],
-      departments:['正方组', '反方组', '评委组', '宣传组'],
-      tags:['竞赛', '思辨', '表达', '职业'],
-      recruitment:{title:'辩论队新赛季招募', deadline:'10月20日', departments:4, quota:10}
-    },
-    'literature': {
-      id:'literature', name:'校园文学社', emoji:'📰', slogan:'"文字承载梦想"', category:'🎨 艺术',
-      members:56, history:'2年', events:4, rating:'4.6⭐',
-      founding:'2022年10月', scale:'55+', timeEnrollment:'每周2-3小时', threshold:'热爱写作',
-      description:'校园文学社是文学爱好者的精神家园。我们发布文学作品、组织诗歌朗诵会、出版校园刊物。无论是诗歌、散文还是小说，这里是展现你才华的舞台。',
-      activities:['诗歌朗诵会', '创意写作工坊', '校园文学刊物出版'],
-      departments:['创作部', '编辑部', '宣传部'],
-      tags:['文学', '写作', '创意', '表达'],
-      recruitment:{title:'文学社招新-寻找创意作者', deadline:'10月25日', departments:3, quota:18}
-    },
-  },
   activities: {
     'a1': {id:'a1', clubId:'drama', name:'《等待戈多》秋季公演', emoji:'🎭', category:'公开演出', free:'免费'},
     'a2': {id:'a2', clubId:'photo', name:'秋日人像摄影工作坊', emoji:'📷', category:'工作坊', free:'有费用'},
@@ -1793,6 +1707,17 @@ function back(){
 }
 
 function navGo(id, navId){
+  // 调试：打印当前状态
+  console.log('navGo called:', { id, navId, isCompleted: USER_DATA.isMatchCompleted(), hasResult: !!USER_DATA.matchResult });
+  
+  // 特殊处理：如果是 match 导航且已完成测试，直接跳转到结果页面
+  if(navId === 'nav-match' && USER_DATA.isMatchCompleted() && USER_DATA.matchResult){
+    console.log('已完成测试，跳转到结果页面');
+    id = 's-match-result';
+  } else if(navId === 'nav-match'){
+    console.log('未完成测试或无结果，跳转到引导页');
+  }
+  
   // clear history to root level
   history_stack.length = 1;
   history_stack[0] = id;
@@ -1814,9 +1739,99 @@ function updatePageContent(id){
     updateActivityPage(currentContext.activityId);
   } else if(id === 's-msg-detail' && currentContext.messageTarget){
     updateMessagePage(currentContext.messageTarget);
+  } else if(id === 's-messages'){
+    updateMessagesCenter();
+  } else if(id === 's-match-quiz'){
+    // 检查是否已完成问卷
+    if(USER_DATA.isMatchCompleted()){
+      // 已完成，直接跳转到结果页面
+      setTimeout(() => {
+        updatePageContent('s-match-result');
+        setScreen('s-match-result');
+      }, 100);
+    } else {
+      // 重置问卷数据
+      quizData = { q1: null, q2: [], q3: null, q4: null, customAnswers: {} };
+    }
+  } else if(id === 's-match-result'){
+    // 检查是否有保存的匹配结果
+    if(USER_DATA.isMatchCompleted() && USER_DATA.matchResult){
+      // 显示保存的结果
+      updateMatchResultPage();
+    } else {
+      // 没有结果，显示提示并跳转到问卷
+      toast('💡 请先完成社团匹配问卷');
+      setTimeout(() => {
+        go('s-match-quiz');
+      }, 800);
+    }
   } else if(id === 's-profile'){
     updateProfileFavorites();
+    updateProfileMessages();
+  } else if(id === 's-explore'){
+    initializeClubCards();
+    initializeCategoryFilter();
+  } else if(id === 's-search'){
+    initializeSearchResults();
+    
+    // 为搜索输入框添加事件监听
+    const searchInput = document.getElementById('search-input');
+    if(searchInput){
+      searchInput.addEventListener('input', function(e){
+        searchClubs(e.target.value);
+      });
+    }
   }
+}
+
+// 更新匹配结果页面
+function updateMatchResultPage(){
+  const result = USER_DATA.matchResult;
+  if(!result || !result.clubs) return;
+  
+  // ========== 显示用户画像 ==========
+  const personaTags = document.querySelector('.persona-tags');
+  if(personaTags && result.userProfile && result.userProfile.tags){
+    const tags = result.userProfile.tags;
+    const colorClasses = ['pt1', 'pt2', 'pt3']; // 红色、绿色、橙色
+    
+    personaTags.innerHTML = tags.map((tag, idx) => {
+      // 随机分配颜色（但同一个结果中颜色保持不变）
+      const tagClass = colorClasses[idx % colorClasses.length];
+      return `<div class="ptag ${tagClass}">${tag}</div>`;
+    }).join('');
+  }
+  
+  // ========== 显示社团推荐 ==========
+  const resultList = document.getElementById('match-result-list');
+  if(!resultList) return;
+  
+  // 构建推荐社团的HTML
+  let html = '<div class="rl-title">为你推荐的社团</div>';
+  
+  result.clubs.forEach((rec, idx) => {
+    const club = CLUBS_DB[rec.clubId];
+    if(!club) return;
+    
+    const badgeClass = rec.score >= 80 ? 'rcb-high' : (rec.score >= 70 ? 'rcb-mid' : 'rcb-low');
+    const emoji = club.emoji || '🎯';
+    const bgStyle = club.cardBg || 'rgba(38,70,83,.07)';
+    
+    html += `<div class="rc" onclick="go('s-club', {clubId:'${rec.clubId}'})">
+      <div class="rc-top">
+        <div class="rc-emoji" style="background:${bgStyle}">${emoji}</div>
+        <div class="rc-name">${club.name}</div>
+        <div class="rc-badge ${badgeClass}">${rec.score}%</div>
+      </div>
+      <div class="rc-reason">💡 ${rec.reason}</div>
+      <div class="rc-acts">
+        <div class="rca s" onclick="event.stopPropagation();USER_DATA.toggleLike('${rec.clubId}');toast('已收藏')">❤️ 收藏</div>
+        <div class="rca p" onclick="event.stopPropagation();go('s-club', {clubId:'${rec.clubId}'})">查看主页 →</div>
+      </div>
+    </div>`;
+  });
+  
+  resultList.innerHTML = html;
 }
 
 function updateClubPage(clubId){
@@ -1891,6 +1906,79 @@ function updateClubPage(clubId){
     recruitCard.onclick = () => go('s-recruit', {clubId: clubId});
   }
   
+  // ========== 活动列表 ==========
+  const activitiesContainer = clubScreen.querySelector('#activities-list');
+  if(activitiesContainer){
+    if(club.activities && club.activities.length > 0){
+      activitiesContainer.innerHTML = `<div class="ib-title">社团活动</div>` + 
+        club.activities.map((activity, idx) => `
+          <div style="background:var(--off);border-radius:12px;padding:14px;margin-bottom:10px">
+            <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text)">${activity}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:4px">社团定期组织的精彩活动</div>
+          </div>
+        `).join('');
+    }
+  }
+  
+  // ========== 问答列表 ==========
+  // 常见问答
+  const qaFaqContainer = clubScreen.querySelector('#qa-faq-section');
+  if(qaFaqContainer){
+    if(club.qa && club.qa.length > 0){
+      qaFaqContainer.innerHTML = `<div class="info-block"><div class="ib-title">❓ 常见问答</div></div>` + 
+        club.qa.map((item, idx) => `
+          <div class="info-block" style="cursor:pointer" onclick="toggleQA(this)">
+            <div style="display:flex;justify-content:space-between;align-items:center;font-weight:600;color:var(--text)">
+              <span style="font-size:14px">${item.q}</span>
+              <span style="font-size:16px;color:var(--text2)">+</span>
+            </div>
+            <div style="max-height:0;overflow:hidden;transition:.3s;margin-top:0" class="qa-answer">
+              <div style="font-size:13px;color:var(--text2);padding-top:10px">${item.a}</div>
+            </div>
+          </div>
+        `).join('');
+    }
+  }
+  
+  // 用户问答
+  const qaUserContainer = clubScreen.querySelector('#qa-user-section');
+  if(qaUserContainer){
+    const clubMessages = MESSAGES_DB ? MESSAGES_DB[currentContext.clubId] : null;
+    const userQA = clubMessages && clubMessages.userQA ? clubMessages.userQA : [];
+    
+    if(userQA && userQA.length > 0){
+      qaUserContainer.innerHTML = `<div class="info-block"><div class="ib-title">💬 用户问答</div></div>` + 
+        userQA.map((msg, idx) => `
+          <div class="info-block">
+            <div style="display:flex;align-items:flex-start;gap:10px">
+              <div style="font-size:24px">👤</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;color:var(--text);font-size:14px">${msg.asker || '匿名用户'}</div>
+                <div style="font-size:13px;color:var(--text2);margin-top:2px">${msg.q}</div>
+                <div style="display:flex;gap:8px;margin-top:6px">
+                  <div style="font-size:11px;background:var(--off);padding:4px 8px;border-radius:6px;color:var(--text3)">${msg.date || '最近'}</div>
+                </div>
+              </div>
+            </div>
+            <!-- 回复 -->
+            ${msg.a ? `<div style="margin-top:12px;margin-left:34px;padding-left:10px;border-left:2px solid rgba(38,70,83,.1)">
+              <div style="font-weight:600;color:var(--teal);font-size:13px">${msg.replier || '社团'}</div>
+              <div style="font-size:13px;color:var(--text);margin-top:4px">${msg.a}</div>
+              <div style="display:flex;gap:12px;margin-top:8px">
+                <div class="qa-like-btn" style="cursor:pointer;display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text3)" onclick="toggleQALike(this, '${currentContext.clubId}', ${idx})">
+                  <span>👍</span>
+                  <span class="like-count">${msg.likes || 0}</span>
+                </div>
+              </div>
+            </div>` : ''}
+          </div>
+        `).join('');
+    } else {
+      qaUserContainer.innerHTML = `<div class="info-block"><div class="ib-title">💬 用户问答</div><div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">还没有用户提问<br><span onclick="go('s-msg-detail', {messageTarget: currentContext.clubId})" style="color:var(--teal);cursor:pointer">点击提问 →</span></div></div>`;
+    }
+  }
+  
+  
   // ========== 更新英雄背景颜色 ==========
   const heroDiv = clubScreen.querySelector('.club-hero');
   if(heroDiv) heroDiv.style.background = club.heroGradient;
@@ -1933,7 +2021,7 @@ function updateActivityPage(activityId){
   console.log('Updating activity page with:', activity.name);
   
   // ========== 顶部emoji和背景 ==========
-  const heroEl = actScreen.querySelector('.act-hero');
+  const heroEl = actScreen.querySelector('.act-hero-container');
   const emojiEl = actScreen.querySelector('.act-emoji');
   if(heroEl && emojiEl){
     heroEl.style.background = activity.heroGradient;
@@ -1972,6 +2060,9 @@ function updateActivityPage(activityId){
   const introEl = actScreen.querySelector('.act-intro');
   if(introEl) introEl.textContent = activity.intro;
   
+  // ========== 更新心形按钮状态 ==========
+  updateHeartButtonState(activityId);
+  
   console.log('Activity page update complete');
 }
 
@@ -1985,21 +2076,173 @@ function goToActivityClub(){
 }
 
 function updateMessagePage(clubId){
-  const club = CLUBS_DB[clubId];
-  if(!club) return;
-  
   const msgScreen = document.getElementById('s-msg-detail');
-  if(msgScreen){
-    msgScreen.querySelector('.msgd-avatar').textContent = club.emoji;
-    msgScreen.querySelector('.msgd-name').textContent = club.name;
+  if(!msgScreen) return;
+  
+  // 保存当前查看的社团ID到context中，用于提问提交
+  currentContext.currentMessageClubId = clubId;
+  
+  const club = CLUBS_DB[clubId];
+  const msgData = MESSAGES_DB[clubId];
+  
+  // 更新头部信息
+  msgScreen.querySelector('.msgd-avatar').textContent = club?.emoji || '❓';
+  msgScreen.querySelector('.msgd-name').textContent = club?.name || '未知社团';
+  msgScreen.querySelector('.msgd-status').textContent = msgData?.status || '欢迎咨询';
+  
+  const bubblesContainer = msgScreen.querySelector('.msg-bubbles');
+  const inputBar = msgScreen.querySelector('.msg-input-bar');
+  
+  if(!msgData){
+    // ========== 没有消息数据：显示欢迎界面 ==========
+    if(bubblesContainer){
+      bubblesContainer.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:200px;text-align:center;padding:30px 20px">
+          <div style="font-size:48px;margin-bottom:16px">${club?.emoji || '❓'}</div>
+          <div style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:8px">欢迎咨询${club?.name || '社团'}</div>
+          <div style="font-size:14px;color:var(--text2);margin-bottom:20px;line-height:1.6">
+            目前还没有常见问题，<br>欢迎提出你的问题！
+          </div>
+          <div style="font-size:76px;margin:20px 0">💭</div>
+        </div>
+      `;
+    }
+  } else {
+    // ========== 有消息数据：显示对话气泡 ==========
+    if(bubblesContainer){
+      bubblesContainer.innerHTML = msgData.bubbles.map(bubble => {
+        const isMe = bubble.from === 'me';
+        return `
+          <div class="bubble-row${isMe ? ' me' : ''}">
+            <div class="bubble-av">${isMe ? '😊' : msgData.emoji}</div>
+            <div class="bubble ${isMe ? 'me' : 'them'}">${bubble.text.replace(/\n/g, '<br>')}</div>
+          </div>
+        `;
+      }).join('');
+    }
   }
 }
 
-function updateHeartButtonState(clubId){
-  const heartBtn = document.getElementById('heart-btn');
+function submitQuestion(){
+  const input = document.getElementById('msg-input');
+  const text = input?.value?.trim();
+  
+  if(!text){
+    toast('请输入问题');
+    return;
+  }
+  
+  const clubId = currentContext.currentMessageClubId;
+  if(!clubId || !CLUBS_DB[clubId]){
+    toast('社团信息错误');
+    return;
+  }
+  
+  // 添加问题到用户数据
+  USER_DATA.addQuestion(clubId, text);
+  
+  // ========== 在消息详情页中添加气泡 ==========
+  const bubblesContainer = document.querySelector('.msg-bubbles');
+  if(bubblesContainer){
+    const newBubble = document.createElement('div');
+    newBubble.className = 'bubble-row me';
+    newBubble.innerHTML = `
+      <div class="bubble-av">😊</div>
+      <div class="bubble me">${text}</div>
+    `;
+    bubblesContainer.appendChild(newBubble);
+    
+    // 滚动到最底部
+    bubblesContainer.scrollTop = bubblesContainer.scrollHeight;
+  }
+  
+  // 清空输入框
+  input.value = '';
+  
+  // 刷新消息中心页面
+  const msgScreen = document.getElementById('s-messages');
+  if(msgScreen && msgScreen.style.display !== 'none'){
+    // 消息中心页面可能在背景，稍后刷新即可
+    setTimeout(() => {
+      // 可以在用户返回消息中心时刷新
+    }, 100);
+  }
+  
+  // 显示反馈
+  toast('问题已提交');
+}
+
+function updateMessagesCenter(){
+  const container = document.getElementById('messages-list-container');
+  if(!container) return;
+  
+  // 获取用户提交的问题
+  const userQuestions = USER_DATA.getQuestions ? USER_DATA.getQuestions() : [];
+  
+  // 获取现有的消息对话
+  const messageClubIds = MESSAGES_DB ? Object.keys(MESSAGES_DB) : [];
+  
+  let html = '';
+  
+  // ========== 显示用户提交的问题（最新的在前面）==========
+  if(userQuestions.length > 0){
+    html += userQuestions.map(question => {
+      const club = CLUBS_DB[question.clubId];
+      const preview = question.text.substring(0, 50);
+      const avatarBg = club?.cardBg || 'rgba(38,70,83,.08)';
+      
+      return `<div class="msg-item" onclick="go('s-msg-detail', {messageTarget:'${question.clubId}'})">
+        <div class="msg-avatar" style="background:${avatarBg}">${question.emoji}</div>
+        <div style="flex:1;min-width:0">
+          <div class="msg-name">${question.clubName}</div>
+          <div class="msg-preview">${preview}${question.text.length > 50 ? '...' : ''}</div>
+        </div>
+        <div class="msg-time" style="font-size:12px;color:var(--text2)">我的提问</div>
+      </div>`;
+    }).join('');
+  }
+  
+  // ========== 显示现有的消息对话 ==========
+  if(messageClubIds.length > 0){
+    html += messageClubIds.map(clubId => {
+      const msgData = MESSAGES_DB[clubId];
+      const club = CLUBS_DB[clubId];
+      if(!msgData || !club) return '';
+      
+      // 获取最后一条消息内容
+      const lastBubble = msgData.bubbles.length > 0 ? msgData.bubbles[msgData.bubbles.length - 1].text : '';
+      const preview = lastBubble.replace(/\n/g, ' ').substring(0, 50);
+      
+      return `<div class="msg-item" onclick="go('s-msg-detail', {messageTarget:'${clubId}'})">
+        <div class="msg-avatar" style="background:${club.cardBg}">${msgData.emoji}</div>
+        <div style="flex:1;min-width:0">
+          <div class="msg-name">${msgData.clubName}</div>
+          <div class="msg-preview">${preview}…</div>
+        </div>
+        <div class="msg-time">最新</div>
+      </div>`;
+    }).join('');
+  }
+  
+  if(html){
+    container.innerHTML = html;
+  } else {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3)">暂无消息，点击社团的"提问"开始咨询</div>';
+  }
+}
+
+function updateHeartButtonState(id){
+  // 支持社团（club）和活动（activity）
+  let heartBtn = null;
+  if(CLUBS_DB[id]) {
+    heartBtn = document.getElementById('heart-btn'); // 社团用heart-btn
+  } else if(ACTIVITIES_DB[id]) {
+    heartBtn = document.getElementById('activity-heart-btn'); // 活动用activity-heart-btn
+  }
+  
   if(!heartBtn) return;
   
-  if(USER_DATA.isLiked(clubId)){
+  if(USER_DATA.isLiked(id)){
     heartBtn.classList.add('liked');
   } else {
     heartBtn.classList.remove('liked');
@@ -2007,17 +2250,34 @@ function updateHeartButtonState(clubId){
 }
 
 function updateProfileFavorites(){
+  // ========== 更新用户画像标签 ==========
+  const phTags = document.querySelector('.ph-tags');
+  if(phTags && USER_DATA.matchResult && USER_DATA.matchResult.userProfile && USER_DATA.matchResult.userProfile.tags){
+    const tags = USER_DATA.matchResult.userProfile.tags;
+    const colorClasses = ['pht1', 'pht2', 'pht3']; // 红、绿、橙
+    
+    phTags.innerHTML = tags.slice(0, 3).map((tag, idx) => {
+      const tagClass = colorClasses[idx % colorClasses.length];
+      return `<div class="ph-tag ${tagClass}">✨ ${tag}</div>`;
+    }).join('');
+  }
+  
+  // ========== 更新收藏列表 ==========
   const container = document.getElementById('ptab-fav') || document.getElementById('profile-favorites-container');
   if(!container) return;
   
   const likedClubIds = USER_DATA.getLikedClubs();
+  const likedActivityIds = USER_DATA.getLikedActivities();
   
-  if(likedClubIds.length === 0){
-    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3)">还没有收藏任何社团<br><span style="font-size:12px">在社团详情页点击爱心可收藏</span></div>';
+  if(likedClubIds.length === 0 && likedActivityIds.length === 0){
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3)">还没有收藏任何内容<br><span style="font-size:12px">在社团或活动详情页点击爱心可收藏</span></div>';
     return;
   }
   
-  container.innerHTML = likedClubIds.map(clubId => {
+  let html = '';
+  
+  // 显示收藏的社团
+  html += likedClubIds.map(clubId => {
     const club = CLUBS_DB[clubId];
     if(!club) return '';
     
@@ -2030,6 +2290,442 @@ function updateProfileFavorites(){
       <svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
     </div>`;
   }).join('');
+  
+  // 显示收藏的活动
+  html += likedActivityIds.map(activityId => {
+    const activity = ACTIVITIES_DB[activityId];
+    if(!activity) return '';
+    
+    return `<div class="profile-list-item" onclick="go('s-activity', {activityId:'${activityId}'})">
+      <div class="pli-icon" style="background:rgba(38,70,83,.06)">${activity.emoji}</div>
+      <div style="flex:1;min-width:0">
+        <div class="pli-name">${activity.name}</div>
+        <div class="pli-meta">${activity.category || '活动'} · 📅 ${activity.date || '待定'}</div>
+      </div>
+      <svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+    </div>`;
+  }).join('');
+  
+  container.innerHTML = html;
+}
+
+// 更新用户中心的消息列表
+function updateProfileMessages(){
+  const container = document.getElementById('ptab-msg');
+  if(!container) return;
+  
+  // 获取用户提交的问题
+  const userQuestions = USER_DATA.getQuestions ? USER_DATA.getQuestions() : [];
+  
+  // 获取现有的消息对话
+  const messageClubIds = MESSAGES_DB ? Object.keys(MESSAGES_DB) : [];
+  
+  if(messageClubIds.length === 0 && userQuestions.length === 0){
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3)">暂无提问记录<br><span style="font-size:12px">在社团详情页点击"提问"可提出问题</span></div>';
+    return;
+  }
+  
+  let html = '';
+  
+  // ========== 显示用户提交的问题（最新的在前面） ==========
+  if(userQuestions.length > 0){
+    html += userQuestions.map(question => {
+      const timeStr = getTimeString(question.time);
+      const statusText = question.status === 'replied' ? '已回复' : '等待回复';
+      const statusClass = question.status === 'replied' ? 'ps-done' : 'ps-pending';
+      
+      return `<div class="profile-list-item" onclick="go('s-msg-detail', {messageTarget:'${question.clubId}'})">
+        <div class="pli-icon" style="background:${CLUBS_DB[question.clubId]?.cardBg || 'rgba(38,70,83,.08)'}">${question.emoji}</div>
+        <div style="flex:1;min-width:0">
+          <div class="pli-name">${question.clubName}</div>
+          <div class="pli-meta">${question.text.substring(0, 40)}${question.text.length > 40 ? '...' : ''}</div>
+        </div>
+        <div class="pli-status ${statusClass}">${statusText}</div>
+      </div>`;
+    }).join('');
+  }
+  
+  // ========== 显示现有的消息对话 ==========
+  if(messageClubIds.length > 0){
+    html += messageClubIds.map(clubId => {
+      const msgData = MESSAGES_DB[clubId];
+      const club = CLUBS_DB[clubId];
+      if(!msgData || !club) return '';
+      
+      // 获取最后一条消息内容
+      const lastBubble = msgData.bubbles.length > 0 ? msgData.bubbles[msgData.bubbles.length - 1].text : '';
+      const preview = lastBubble.replace(/\n/g, ' ').substring(0, 40);
+      
+      const statusText = '已回';
+      const statusClass = 'ps-done';
+      
+      return `<div class="profile-list-item" onclick="go('s-msg-detail', {messageTarget:'${clubId}'})">
+        <div class="pli-icon" style="background:${club.cardBg}">${msgData.emoji}</div>
+        <div style="flex:1;min-width:0">
+          <div class="pli-name">${msgData.clubName}</div>
+          <div class="pli-meta">${preview}…</div>
+        </div>
+        <div class="pli-status ${statusClass}">${statusText}</div>
+      </div>`;
+    }).join('');
+  }
+  
+  if(html){
+    container.innerHTML = html;
+  } else {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3)">暂无提问记录</div>';
+  }
+}
+
+function getTimeString(timestamp){
+  if(!timestamp) return '最近';
+  
+  const now = new Date().getTime();
+  const diffMs = now - timestamp;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if(diffMins < 1) return '刚刚';
+  if(diffMins < 60) return `${diffMins}分钟前`;
+  if(diffHours < 24) return `${diffHours}小时前`;
+  if(diffDays === 1) return '昨天';
+  if(diffDays < 7) return `${diffDays}天前`;
+  
+  const date = new Date(timestamp);
+  return `${date.getMonth() + 1}月${date.getDate()}日`;
+}
+
+// ═════════════════════════════════════════════
+// MATCH QUIZ 匹配测试相关函数
+// ═════════════════════════════════════════════
+
+// 全局存储问卷答案
+let quizData = {
+  q1: null,  // 第1题单选
+  q2: [],    // 第2题多选
+  q3: null,  // 第3题单选
+  q4: null,  // 第4题单选
+  customAnswers: {}  // 其他选项的自定义答案
+};
+
+// 选择单选题选项
+function selectQuizOption(questionNum, answer, element) {
+  // 除去兄弟元素的 .on 类
+  const siblings = element.parentElement.querySelectorAll('.opt');
+  siblings.forEach(el => {
+    if(!el.querySelector('.other-input')) {
+      el.classList.remove('on');
+    }
+  });
+  element.classList.add('on');
+  
+  // 隐藏其他输入框
+  const otherInput = document.getElementById(`q${questionNum}-other-input`);
+  if(otherInput) otherInput.style.display = 'none';
+  if(otherInput) otherInput.value = '';
+  
+  // 保存答案
+  quizData[`q${questionNum}`] = answer;
+  delete quizData.customAnswers[`q${questionNum}`];
+}
+
+// 切换多选题选项
+function toggleMultiOption(questionNum, answer, element) {
+  element.classList.toggle('on');
+  
+  // 如果选中其他选项的元素且有多选，需要特殊处理
+  const selected = Array.from(element.parentElement.querySelectorAll('.opt.on'))
+    .filter(el => !el.querySelector('.other-input'))
+    .map(el => el.querySelector('.opt-text').textContent.trim());
+  
+  quizData.q2 = selected;
+}
+
+// 切换"其他"输入框
+function toggleOtherInput(questionNum, element) {
+  const input = document.getElementById(`q${questionNum}-other-input`);
+  
+  // 如果这是一个选项元素（有 opt 类）
+  if(element.classList.contains('opt')) {
+    // 移除其他选项的 on 类
+    const siblings = element.parentElement.querySelectorAll('.opt:not([id^="q"])');
+    siblings.forEach(el => {
+      if(el !== element && !el.querySelector('.other-input')) {
+        el.classList.remove('on');
+      }
+    });
+    
+    element.classList.toggle('on');
+    
+    if(input) {
+      if(element.classList.contains('on')) {
+        // 显示输入框并设置为必填状态
+        input.style.display = 'block';
+        input.setAttribute('required', 'required');
+        input.setAttribute('placeholder', '请输入自定义答案 (必填)');
+        input.focus();
+        // 清空之前的值
+        input.value = '';
+        // 标记该题未完成（必须填写输入框）
+        if(questionNum === 1) quizData.q1 = null;
+        else if(questionNum === 2) quizData.q2 = [];
+        else if(questionNum === 3) quizData.q3 = null;
+        else if(questionNum === 4) quizData.q4 = null;
+      } else {
+        // 取消选择时隐藏输入框
+        input.style.display = 'none';
+        input.value = '';
+        input.removeAttribute('required');
+        delete quizData.customAnswers[`q${questionNum}`];
+        if(questionNum === 1) quizData.q1 = null;
+        else if(questionNum === 2) quizData.q2 = [];
+        else if(questionNum === 3) quizData.q3 = null;
+        else if(questionNum === 4) quizData.q4 = null;
+      }
+    }
+  }
+}
+
+// 移动到下一题（验证当前题）
+function nextMatchQuestion(currentQ, nextQ) {
+  // 验证当前题是否有答案
+  let hasAnswer = false;
+  let errorMsg = '请选择一个选项';
+  
+  if(currentQ === 1 || currentQ === 3 || currentQ === 4) {
+    // 单选题
+    if(quizData[`q${currentQ}`]) {
+      hasAnswer = true;
+    } else {
+      // 检查是否选了"其他"
+      const otherOption = document.querySelector(`#s-match-quiz${currentQ} .opt`)?.parentElement?.querySelector('.opt img, .opt div');
+      const input = document.getElementById(`q${currentQ}-other-input`);
+      
+      if(input && input.style.display !== 'none') {
+        // "其他"选项已显示,强制填写
+        if(input.value.trim()) {
+          quizData.customAnswers[`q${currentQ}`] = input.value.trim();
+          quizData[`q${currentQ}`] = `其他: ${input.value.trim()}`;
+          hasAnswer = true;
+        } else {
+          // "其他"被选中但没有填写文字
+          errorMsg = '⚠️ "其他"选项必须填写内容';
+          toast(errorMsg);
+          input.focus();
+          return;
+        }
+      }
+    }
+  } else if(currentQ === 2) {
+    // 多选题
+    if(quizData.q2.length > 0) {
+      hasAnswer = true;
+    } else {
+      const input = document.getElementById(`q${currentQ}-other-input`);
+      
+      if(input && input.style.display !== 'none') {
+        // "其他"选项已显示,强制填写
+        if(input.value.trim()) {
+          quizData.customAnswers[`q${currentQ}`] = input.value.trim();
+          quizData.q2 = [`其他: ${input.value.trim()}`];
+          hasAnswer = true;
+        } else {
+          errorMsg = '⚠️ "其他"选项必须填写内容';
+          toast(errorMsg);
+          input.focus();
+          return;
+        }
+      }
+    }
+  }
+  
+  if(!hasAnswer) {
+    toast(errorMsg);
+    return;
+  }
+  
+  // 移动到下一题
+  go(`s-match-quiz-${nextQ}`);
+}
+
+// 完成问卷
+function completeMatchQuiz() {
+  // 验证第4题
+  if(!quizData.q4) {
+    const input = document.getElementById('q4-other-input');
+    
+    if(input && input.style.display !== 'none') {
+      // "其他"选项已显示,强制填写
+      if(input.value.trim()) {
+        quizData.customAnswers.q4 = input.value.trim();
+        quizData.q4 = `其他: ${input.value.trim()}`;
+      } else {
+        toast('⚠️ "其他"选项必须填写内容');
+        input.focus();
+        return;
+      }
+    } else {
+      toast('请完成所有问题');
+      return;
+    }
+  }
+  
+  // 保存答案到用户数据
+  USER_DATA.saveMatchAnswers(quizData);
+  
+  // 立即跳转到结果页面（显示加载状态）
+  go('s-match-result');
+  
+  // 然后执行匹配算法（异步）
+  matchClubsWithLLM(quizData);
+}
+
+// LLM匹配算法 - 调用后端API
+function matchClubsWithLLM(answers) {
+  // 显示加载状态
+  const resultList = document.getElementById('match-result-list');
+  if(resultList) {
+    resultList.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">⏳ 正在为你匹配最佳社团...</div>';
+  }
+  
+  // 后端API地址
+  const API_URL = 'http://localhost:5000/api/match';
+  
+  // 发送请求到后端
+  fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify(answers)
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`API错误: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(result => {
+    console.log('LLM返回结果:', result);
+    
+    if(result.success && result.data && result.data.clubs) {
+      // 成功：使用LLM的结果
+      USER_DATA.saveMatchResult(result.data);
+      console.log('✅ LLM匹配成功');
+      // 立即渲染结果
+      updateMatchResultPage();
+    } else {
+      // 失败：使用备用算法
+      console.warn('LLM返回格式错误，使用备用算法');
+      const fallbackResult = calculateMatchScore(answers);
+      USER_DATA.saveMatchResult(fallbackResult);
+      updateMatchResultPage();
+    }
+  })
+  .catch(error => {
+    // 错误：使用备用算法
+    console.error('❌ LLM API调用失败:', error.message);
+    console.log('📊 使用备用匹配算法...');
+    
+    // 显示备用提示
+    toast('✨ 使用本地匹配算法进行推荐');
+    
+    const fallbackResult = calculateMatchScore(answers);
+    USER_DATA.saveMatchResult(fallbackResult);
+    updateMatchResultPage();
+  });
+}
+
+// 计算匹配分数
+function calculateMatchScore(answers) {
+  const clubIds = ['drama', 'photo', 'coding', 'green'];
+  const scores = {};
+  
+  // 基础分
+  Object.keys(clubIds).forEach(id => scores[id] = 50);
+  
+  // 根据兴趣方向加分
+  const interest = answers.q1 || '';
+  if(interest.includes('艺术')) {
+    scores['drama'] += 15;
+    scores['photo'] += 15;
+  } else if(interest.includes('学术')) {
+    scores['coding'] += 20;
+  } else if(interest.includes('公益')) {
+    scores['green'] += 20;
+  }
+  
+  // 根据参与目标加分
+  const goals = answers.q2 || [];
+  if(goals.toString().includes('朋友')) {
+    scores['drama'] += 10;
+    scores['green'] += 10;
+  }
+  if(goals.toString().includes('经验')) {
+    scores['coding'] += 10;
+    scores['photo'] += 8;
+  }
+  if(goals.toString().includes('比赛')) {
+    scores['coding'] += 15;
+  }
+  
+  // 根据时间投入调整
+  const time = answers.q3 || '';
+  if(time.includes('灵活')) {
+    scores['green'] += 10;
+    scores['photo'] += 5;
+  } else if(time.includes('5小时以上')) {
+    scores['drama'] += 12;
+    scores['coding'] += 10;
+  }
+  
+  // 根据经验水平调整
+  const exp = answers.q4 || '';
+  if(exp.includes('零基础')) {
+    scores['drama'] += 10;
+    scores['green'] += 8;
+  } else if(exp.includes('高手')) {
+    scores['coding'] += 15;
+  }
+  
+  // 排序并返回结果
+  const sorted = Object.entries(scores)
+    .map(([clubId, score]) => ({
+      clubId,
+      name: CLUBS_DB[clubId]?.name || '未知',
+      score: Math.min(100, score),
+      reason: getMatchReason(clubId, score)
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+  
+  return { clubs: sorted };
+}
+
+// 获取匹配理由
+function getMatchReason(clubId, score) {
+  const reasons = {
+    'drama': '根据你的兴趣方向和参与目标，戏剧社是一个很好的选择',
+    'photo': '摄影协会的灵活参加方式适合你的时间安排',
+    'coding': '计算机协会适合想要积累经验和参加竞赛的你',
+    'green': '环保公益社以灵活的时间和服务精神匹配你的需求'
+  };
+  return reasons[clubId] || '匹配度高';
+}
+
+// 清除匹配数据并重新开始
+function clearAndRestartQuiz() {
+  USER_DATA.clearMatchData();
+  quizData = { q1: null, q2: [], q3: null, q4: null, customAnswers: {} };
+  // 清除所有选择状态
+  document.querySelectorAll('.opt').forEach(opt => opt.classList.remove('on'));
+  document.querySelectorAll('.other-input').forEach(input => {
+    input.style.display = 'none';
+    input.value = '';
+  });
+  go('s-match-quiz');
 }
 
 function updateRecruitPage(clubId){
@@ -2211,6 +2907,25 @@ function toggleLike(btn){
   updateProfileFavorites();
 }
 
+// 切换活动收藏
+function toggleActivityLike(btn){
+  const activityId = currentContext.activityId;
+  if(!activityId) return;
+  
+  const isNowLiked = USER_DATA.toggleLike(activityId);
+  
+  if(isNowLiked){
+    btn.classList.add('liked');
+    toast('❤️ 已收藏');
+  } else {
+    btn.classList.remove('liked');
+    toast('❌ 已取消收藏');
+  }
+  
+  // 更新个人主页收藏列表
+  updateProfileFavorites();
+}
+
 /* ═══════════════════════════════════
    MICRO INTERACTIONS
 ═══════════════════════════════════ */
@@ -2229,10 +2944,61 @@ function toggleRtab(el){
   el.closest('.result-tabs').querySelectorAll('.rtab').forEach(t=>t.classList.remove('on'));
   el.classList.add('on');
 }
-function switchCtab(el){
-  el.closest('.club-tabs').querySelectorAll('.ctab').forEach(t=>t.classList.remove('on'));
+function switchCtab(el, tabName){
+  const tabsContainer = el.closest('.club-tabs');
+  tabsContainer.querySelectorAll('.ctab').forEach(t => t.classList.remove('on'));
   el.classList.add('on');
+  
+  // 隐藏所有内容，显示对应标签页
+  const screen = el.closest('.screen');
+  if(screen){
+    screen.querySelectorAll('.ctab-content').forEach(content => content.style.display = 'none');
+    const targetContent = screen.querySelector('#ctab-' + tabName);
+    if(targetContent) targetContent.style.display = 'block';
+  }
 }
+
+// 问答展开/收起
+function toggleQA(el){
+  const answer = el.querySelector('.qa-answer');
+  if(answer){
+    const isOpen = answer.style.maxHeight && answer.style.maxHeight !== '0px';
+    if(isOpen){
+      answer.style.maxHeight = '0';
+      el.querySelector('span:last-child').textContent = '+';
+    } else {
+      answer.style.maxHeight = answer.scrollHeight + 'px';
+      el.querySelector('span:last-child').textContent = '−';
+    }
+  }
+}
+
+// 用户问答点赞功能
+function toggleQALike(el, clubId, msgIdx){
+  const likeCount = el.querySelector('.like-count');
+  if(!likeCount) return;
+  
+  // 切换点赞状态
+  el.classList.toggle('liked');
+  
+  // 更新点赞数
+  let count = parseInt(likeCount.textContent) || 0;
+  if(el.classList.contains('liked')){
+    count++;
+    el.style.color = 'var(--teal)';
+    likeCount.textContent = count;
+  } else {
+    count = Math.max(0, count - 1);
+    el.style.color = 'var(--text3)';
+    likeCount.textContent = count;
+  }
+  
+  // 保存点赞状态到 MESSAGES_DB
+  if(MESSAGES_DB && MESSAGES_DB[clubId] && MESSAGES_DB[clubId].userQA && MESSAGES_DB[clubId].userQA[msgIdx]){
+    MESSAGES_DB[clubId].userQA[msgIdx].likes = count;
+  }
+}
+
 function switchPtab(el, containerId, showId){
   el.closest('.profile-tabs').querySelectorAll('.ptab').forEach(t=>t.classList.remove('on'));
   el.classList.add('on');
@@ -2241,34 +3007,357 @@ function switchPtab(el, containerId, showId){
   document.getElementById(showId).style.display='block';
 }
 
+// 初始化分类过滤器
+function initializeClubCards(){
+  const container = document.getElementById('clubs-container');
+  if(!container) return;
+  
+  // 清空现有卡片
+  container.innerHTML = '';
+  
+  // 生成所有社团卡片
+  Object.entries(CLUBS_DB).forEach(([clubId, club]) => {
+    // 根据tags提取信息
+    const hasRecruiting = true; // 假设都在招新中
+    const tagInfo = club.tags && club.tags.length > 0 ? club.tags[0] : '社团';
+    
+    // 创建卡片HTML
+    const card = document.createElement('div');
+    card.className = 'club-card-h';
+    card.setAttribute('data-clubid', clubId);
+    card.setAttribute('data-category', club.category);
+    card.onclick = function() { go('s-club', {clubId: clubId}); };
+    
+    // 生成tag标签
+    let tagsHtml = '<div class="mini-tag mini-warm">招新中</div>';
+    if(club.tags && club.tags.length > 0){
+      tagsHtml += `<div class="mini-tag">${club.tags[0]}</div>`;
+    }
+    
+    card.innerHTML = `
+      <div class="cch-img" style="background:${club.cardBg}">
+        ${club.emoji}
+      </div>
+      <div class="cch-body">
+        <div class="cch-name">${club.name}</div>
+        <div class="cch-desc">${club.slogan}</div>
+        <div class="cch-tags">
+          ${tagsHtml}
+        </div>
+      </div>
+    `;
+    
+    container.appendChild(card);
+  });
+}
+
+// Initialize search results with all clubs
+function initializeSearchResults(){
+  const container = document.getElementById('search-results-container');
+  if(!container) return;
+  
+  // 清空现有结果
+  container.innerHTML = '';
+  
+  // 生成所有社团的招新卡片
+  Object.entries(CLUBS_DB).forEach(([clubId, club]) => {
+    const card = document.createElement('div');
+    card.className = 'recruit-card';
+    card.setAttribute('data-clubid', clubId);
+    card.setAttribute('data-category', club.category);
+    card.setAttribute('data-type', 'club');
+    
+    // 为所有社团添加"招新"标签
+    const tags = [...(club.tags || []), '招新'];
+    card.setAttribute('data-tags', JSON.stringify(tags));
+    card.onclick = function() { go('s-club', {clubId: clubId}); };
+    
+    card.innerHTML = `
+      <div class="recruit-emoji" style="background:${club.cardBg}">
+        ${club.emoji}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="recruit-org">${club.category}</div>
+        <div class="recruit-title">${club.name}</div>
+        <div class="recruit-meta">
+          <div class="mini-tag mini-warm" style="font-size:11px;padding:3px 8px">招新中</div>
+          <div class="recruit-dept">${club.threshold} · ${club.timeInvestment}</div>
+        </div>
+      </div>
+    `;
+    
+    container.appendChild(card);
+  });
+  
+  // 生成所有活动卡片
+  Object.entries(ACTIVITIES_DB).forEach(([activityId, activity]) => {
+    const club = CLUBS_DB[activity.clubId];
+    if(!club) return;
+    
+    const card = document.createElement('div');
+    card.className = 'act-card';
+    card.setAttribute('data-activityid', activityId);
+    card.setAttribute('data-clubid', activity.clubId);
+    card.setAttribute('data-type', 'activity');
+    card.setAttribute('data-category', club.category);
+    card.onclick = function() { go('s-activity', {activityId: activityId}); };
+    
+    card.innerHTML = `
+      <div class="act-cover" style="background:${club.heroGradient}">
+        <span>${activity.emoji}</span>
+        <div class="act-cover-badge">${activity.category || '活动'}</div>
+      </div>
+      <div class="act-body">
+        <div class="act-org">${club.name}</div>
+        <div class="act-title">${activity.name}</div>
+        <div class="act-meta">
+          <span>🗓 ${activity.date} ${activity.startTime}</span>
+          <span>📍 ${activity.venue}</span>
+          <span>🎟 ${activity.free}</span>
+        </div>
+      </div>
+    `;
+    
+    container.appendChild(card);
+  });
+}
+
+// Filter search results by category or tags
+function filterSearchResults(filterType, el){
+  // Update filter pill states - only in the second hscroll
+  el.closest('.hscroll:not(#type-filter)').querySelectorAll('.filter-pill').forEach(p => p.classList.remove('on'));
+  el.classList.add('on');
+  
+  // Get search input value
+  const searchInput = document.getElementById('search-input');
+  const searchKeyword = searchInput ? searchInput.value.toLowerCase() : '';
+  
+  // Get all cards
+  const container = document.getElementById('search-results-container');
+  if(!container) return;
+  
+  const cards = container.querySelectorAll('.recruit-card, .act-card');
+  cards.forEach(card => {
+    const isClub = card.classList.contains('recruit-card');
+    let shouldShow = true;
+    
+    if(isClub){
+      const category = card.getAttribute('data-category');
+      const tags = JSON.parse(card.getAttribute('data-tags') || '[]');
+      const clubName = card.querySelector('.recruit-title')?.textContent || '';
+      const clubOrg = card.querySelector('.recruit-org')?.textContent || '';
+      
+      // 首先按筛选类型过滤
+      if(filterType !== null){
+        const categoryMatch = category.includes(filterType);
+        const tagsMatch = tags.some(tag => tag.includes(filterType));
+        shouldShow = categoryMatch || tagsMatch;
+      }
+      
+      // 然后按搜索关键词过滤
+      if(shouldShow && searchKeyword){
+        const nameMatch = clubName.toLowerCase().includes(searchKeyword);
+        const orgMatch = clubOrg.toLowerCase().includes(searchKeyword);
+        shouldShow = nameMatch || orgMatch;
+      }
+    } else {
+      // 处理活动卡片
+      const actTitle = card.querySelector('.act-title')?.textContent || '';
+      const actOrg = card.querySelector('.act-org')?.textContent || '';
+      
+      // 按搜索关键词过滤
+      if(searchKeyword){
+        const titleMatch = actTitle.toLowerCase().includes(searchKeyword);
+        const orgMatch = actOrg.toLowerCase().includes(searchKeyword);
+        shouldShow = titleMatch || orgMatch;
+      }
+    }
+    
+    if(shouldShow){
+      card.classList.remove('hidden');
+    } else {
+      card.classList.add('hidden');
+    }
+  });
+}
+
+// 按类型过滤（活动/社团）
+function filterByType(type, el){
+  const typeFilter = document.getElementById('type-filter');
+  if(!typeFilter) return;
+  
+  typeFilter.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('on'));
+  el.classList.add('on');
+  
+  const container = document.getElementById('search-results-container');
+  if(!container) return;
+  
+  const cards = container.querySelectorAll('.recruit-card, .act-card');
+  cards.forEach(card => {
+    const cardType = card.getAttribute('data-type');
+    
+    let shouldShow = true;
+    
+    // 按类型过滤
+    if(type !== 'all'){
+      shouldShow = cardType === type;
+    }
+    
+    if(shouldShow){
+      card.classList.remove('hidden');
+    } else {
+      card.classList.add('hidden');
+    }
+  });
+}
+
+// 搜索社团和活动
+function searchClubs(searchKeyword){
+  if(!searchKeyword){
+    // 如果搜索框为空，显示全部
+    initializeSearchResults();
+    const firstPill = document.querySelector('#type-filter .filter-pill.on');
+    if(firstPill){
+      filterByType('all', firstPill);
+    }
+    return;
+  }
+  
+  const container = document.getElementById('search-results-container');
+  if(!container) return;
+  
+  const keyword = searchKeyword.toLowerCase();
+  const cards = container.querySelectorAll('.recruit-card, .act-card');
+  
+  cards.forEach(card => {
+    const isClub = card.classList.contains('recruit-card');
+    let isMatch = false;
+    
+    if(isClub){
+      const clubName = card.querySelector('.recruit-title')?.textContent || '';
+      const clubOrg = card.querySelector('.recruit-org')?.textContent || '';
+      const clubDept = card.querySelector('.recruit-dept')?.textContent || '';
+      
+      isMatch = clubName.toLowerCase().includes(keyword) || 
+                clubOrg.toLowerCase().includes(keyword) || 
+                clubDept.toLowerCase().includes(keyword);
+    } else {
+      const actTitle = card.querySelector('.act-title')?.textContent || '';
+      const actOrg = card.querySelector('.act-org')?.textContent || '';
+      
+      isMatch = actTitle.toLowerCase().includes(keyword) || 
+                actOrg.toLowerCase().includes(keyword);
+    }
+    
+    if(isMatch){
+      card.classList.remove('hidden');
+    } else {
+      card.classList.add('hidden');
+    }
+  });
+}
+
+// Initialize category filters from clubs data
+function initializeCategoryFilter(){
+  const filterContainer = document.getElementById('category-filter');
+  if(!filterContainer) return;
+  
+  // 收集所有唯一的分类
+  const categories = new Set();
+  Object.values(CLUBS_DB).forEach(club => {
+    if(club.category) categories.add(club.category);
+  });
+  
+  // 排序并转换为数组
+  const sortedCategories = Array.from(categories).sort();
+  
+  // 清空容器，保留"全部"按钮
+  const allChip = filterContainer.querySelector('.chip.on');
+  filterContainer.innerHTML = '';
+  if(allChip) {
+    filterContainer.appendChild(allChip);
+  }
+  
+  // 添加分类chips
+  sortedCategories.forEach(cat => {
+    const chip = document.createElement('div');
+    chip.className = 'chip off';
+    chip.textContent = cat;
+    chip.onclick = function() { filterByCategory(cat, this); };
+    filterContainer.appendChild(chip);
+  });
+}
+
+// 展开/收起所有社团
+function expandAllClubs(){
+  const hscroll = document.getElementById('clubs-container');
+  const allList = document.getElementById('all-clubs-list');
+  const moreBtn = document.querySelector('.sec-hd:first-of-type .sec-more');
+  
+  if(!hscroll || !allList) return;
+  
+  // 切换显示/隐藏
+  if(allList.style.display === 'none' || !allList.style.display){
+    // 展开：隐藏hscroll，显示完整列表
+    hscroll.style.display = 'none';
+    allList.style.display = 'block';
+    
+    // 清空并生成所有社团卡片
+    allList.innerHTML = '';
+    Object.entries(CLUBS_DB).forEach(([clubId, club]) => {
+      const card = document.createElement('div');
+      card.className = 'recruit-card';
+      card.onclick = function() { go('s-club', {clubId: clubId}); };
+      
+      card.innerHTML = `
+        <div class="recruit-emoji" style="background:${club.cardBg}">
+          ${club.emoji}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div class="recruit-org">${club.category}</div>
+          <div class="recruit-title">${club.name}</div>
+          <div class="recruit-meta">
+            <div class="mini-tag mini-warm" style="font-size:11px;padding:3px 8px">招新中</div>
+            <div class="recruit-dept">${club.threshold} · ${club.timeInvestment}</div>
+          </div>
+        </div>
+      `;
+      allList.appendChild(card);
+    });
+    
+    if(moreBtn) moreBtn.textContent = '收起';
+  } else {
+    // 收起：显示hscroll，隐藏完整列表
+    hscroll.style.display = 'flex';
+    allList.style.display = 'none';
+    if(moreBtn) moreBtn.textContent = '查看全部';
+  }
+}
+
 // Filter clubs by category
 function filterByCategory(category, el){
   // Update chip states
   document.querySelectorAll('#category-filter .chip').forEach(c=>c.classList.remove('on'));
   el.classList.add('on');
   
-  // Get hscroll container
-  const hscroll = document.querySelector('.sec .hscroll');
-  if(!hscroll) return;
+  // Get clubs container
+  const clubsContainer = document.getElementById('clubs-container');
+  if(!clubsContainer) return;
   
-  // Filter all club cards in the hscroll
-  hscroll.querySelectorAll('.club-card-h').forEach(card => {
-    const clubName = card.querySelector('.cch-name').textContent;
-    const clubId = Object.values(DATA.clubs).find(c => c.name === clubName)?.id;
+  // Filter all club cards
+  clubsContainer.querySelectorAll('.club-card-h').forEach(card => {
+    const clubCategory = card.getAttribute('data-category');
     
-    if(!clubId) return;
-    const club = DATA.clubs[clubId];
-    
-    if(category === null || club.category === category){
-      card.style.display = 'flex';
-      card.style.opacity = '1';
+    if(category === null || clubCategory === category){
+      card.classList.remove('hidden');
     } else {
-      card.style.display = 'none';
+      card.classList.add('hidden');
     }
   });
 }
 
 /* initial chrome */
+USER_DATA.load();
 updateChrome('s-welcome');
 document.getElementById('bottomnav').style.display='none';
 </script>
