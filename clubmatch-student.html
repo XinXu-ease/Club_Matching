@@ -1,0 +1,3430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClubMatch — 完整原型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════
+   TOKENS & RESET
+═══════════════════════════════════ */
+:root {
+  --dark:#264653; --teal:#2A9D8F; --gold:#E9C46A;
+  --peach:#F4A261; --coral:#E76F51;
+  --white:#FFFFFF; --off:#FAFAF8; --light:#F2F0EB;
+  --mid:#C8C4B8; --text:#1A2E35; --text2:#4A5E65; --text3:#8A9DA5;
+  --nav-h:76px; --status-h:44px;
+  --phone-w:390px; --phone-h:844px;
+  --radius:20px;
+  --shadow:0 32px 72px rgba(38,70,83,.18),0 6px 20px rgba(38,70,83,.10);
+  
+  /* Student theme colors */
+  --primary-gradient: linear-gradient(135deg,var(--peach),var(--coral));
+  --secondary-bg: rgba(244,162,97,.15);
+  --theme-accent: var(--coral);
+  
+  /* Admin theme colors (store for potential use) */
+  --admin-primary: var(--teal);
+  --admin-gradient: linear-gradient(135deg,var(--teal),#22857a);
+  --admin-secondary-bg: rgba(42,157,143,.12);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;font-family:'DM Sans',sans-serif;background:#E8E4D8;overflow:hidden}
+
+/* ═══════════════════════════════════
+   OUTER SHELL — single phone centered
+═══════════════════════════════════ */
+#shell {
+  width:100%; height:100%;
+  display:flex; align-items:center; justify-content:center;
+}
+#phone {
+  width:var(--phone-w); height:var(--phone-h);
+  background:var(--white); border-radius:44px;
+  overflow:hidden; position:relative;
+  box-shadow:var(--shadow);
+  flex-shrink:0;
+}
+
+/* ── status bar ── */
+#statusbar {
+  position:absolute; top:0; left:0; right:0;
+  height:var(--status-h); z-index:200;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 22px;
+  transition: background .3s, color .3s;
+}
+#statusbar .time{font-weight:600;font-size:15px}
+#statusbar .icons{display:flex;gap:5px;align-items:center}
+#statusbar .icons svg{width:16px;height:16px}
+.sb-light{background:var(--white);color:var(--text)}
+.sb-dark {background:transparent;color:var(--white)}
+.sb-dark .icons svg{fill:white;stroke:white}
+.sb-light .icons svg{fill:var(--text);stroke:var(--text)}
+
+/* ── bottom nav ── */
+#bottomnav {
+  position:absolute; bottom:0; left:0; right:0;
+  height:var(--nav-h); z-index:200;
+  background:rgba(255,255,255,.95);
+  backdrop-filter:blur(16px);
+  border-top:1px solid rgba(38,70,83,.07);
+  display:flex; align-items:flex-start; padding-top:8px;
+}
+.nv{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding-top:2px}
+.nv-ic{width:24px;height:24px;display:flex;align-items:center;justify-content:center}
+.nv-ic svg{width:22px;height:22px;fill:none;stroke:var(--mid);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:.2s}
+.nv-lb{font-size:10px;font-weight:500;color:var(--text3);letter-spacing:.02em;transition:.2s}
+.nv.active .nv-ic svg{stroke:var(--coral)}
+.nv.active .nv-lb{color:var(--coral);font-weight:600}
+
+/* ── screen container ── */
+#screens {
+  position:absolute;
+  top:var(--status-h); left:0; right:0;
+  bottom:var(--nav-h);
+  overflow:hidden;
+}
+.screen {
+  position:absolute; inset:0;
+  overflow-y:auto; overflow-x:hidden;
+  scrollbar-width:none;
+  opacity:0; pointer-events:none;
+  transform:translateX(30px);
+  transition:opacity .25s ease, transform .25s ease;
+  background:var(--off);
+}
+.screen::-webkit-scrollbar{display:none}
+.screen.active{opacity:1;pointer-events:all;transform:translateX(0)}
+.screen.slide-back{transform:translateX(-30px)}
+
+/* screens that need no bottom nav */
+.screen.no-nav ~ #bottomnav{display:none}
+
+/* ═══════════════════════════════════
+   SHARED COMPONENTS
+═══════════════════════════════════ */
+.h1{font-family:'Syne',sans-serif;font-weight:800}
+.h2{font-family:'Syne',sans-serif;font-weight:700}
+.h3{font-family:'Syne',sans-serif;font-weight:600}
+
+/* back button */
+.back-row{display:flex;align-items:center;gap:10px;padding:12px 20px 0}
+.back-btn{width:36px;height:36px;border-radius:50%;background:var(--light);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.back-btn svg{width:16px;height:16px;stroke:var(--text);fill:none;stroke-width:2.2;stroke-linecap:round}
+.page-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text)}
+
+/* chips */
+.chip-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:0 20px 2px}
+.chip-row::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;transition:.15s}
+.chip.on{background:var(--coral);color:#fff}
+.chip.off{background:var(--white);color:var(--text2);border:1.5px solid rgba(38,70,83,.1)}
+
+/* cards */
+.card{background:var(--white);border-radius:var(--radius);overflow:hidden;box-shadow:0 2px 12px rgba(38,70,83,.07)}
+
+/* section */
+.sec{padding:20px 20px 0}
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sec-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--text)}
+.sec-more{font-size:12px;color:var(--coral);font-weight:500;cursor:pointer}
+
+/* tags */
+.tag{display:inline-block;padding:4px 10px;border-radius:9px;font-size:11px;font-weight:500}
+.tag-teal{background:rgba(42,157,143,.12);color:var(--teal)}
+.tag-peach{background:rgba(244,162,97,.15);color:#c07930}
+.tag-coral{background:rgba(231,111,81,.12);color:var(--coral)}
+.tag-gold{background:rgba(233,196,106,.2);color:#9a7a1a}
+.tag-gray{background:var(--light);color:var(--text2)}
+.tag-warm{background:rgba(244,162,97,.18);color:var(--coral)}
+
+/* buttons */
+.btn-primary{background:linear-gradient(135deg,var(--peach),var(--coral));color:#fff;border:none;border-radius:14px;font-family:'Syne',sans-serif;font-weight:700;cursor:pointer;text-align:center}
+.btn-secondary{background:transparent;border:1.5px solid rgba(38,70,83,.15);border-radius:14px;font-family:'Syne',sans-serif;font-weight:700;color:var(--text2);cursor:pointer;text-align:center}
+.btn-teal{background:linear-gradient(135deg,var(--teal),#22857a);color:#fff;border:none;border-radius:14px;font-family:'Syne',sans-serif;font-weight:700;cursor:pointer;text-align:center}
+
+/* cta bar */
+.cta-bar{padding:12px 20px;background:var(--white);border-top:1px solid rgba(38,70,83,.07);display:flex;gap:10px}
+
+/* hero dark */
+.dark-hero{background:linear-gradient(145deg,var(--dark) 0%,#1B3A44 100%);position:relative;overflow:hidden}
+.dark-hero .glow1{position:absolute;right:-30px;top:-30px;width:160px;height:160px;background:radial-gradient(circle,rgba(42,157,143,.25) 0%,transparent 70%);border-radius:50%}
+.dark-hero .glow2{position:absolute;left:-20px;bottom:-20px;width:120px;height:120px;background:radial-gradient(circle,rgba(233,196,106,.18) 0%,transparent 70%);border-radius:50%}
+
+/* form fields */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+.field input,.field textarea,.field select{width:100%;padding:12px 14px;border-radius:13px;border:1.5px solid rgba(38,70,83,.12);background:var(--off);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none}
+.field textarea{resize:none;min-height:80px}
+
+/* recruit card */
+.recruit-card{background:var(--white);border-radius:16px;padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 2px 10px rgba(38,70,83,.06);cursor:pointer}
+.recruit-emoji{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.recruit-org{font-size:11px;color:var(--text3);font-weight:500;margin-bottom:2px}
+.recruit-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:5px}
+.recruit-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.recruit-deadline{font-size:11px;color:var(--coral);font-weight:600}
+.recruit-dept{font-size:11px;color:var(--text3)}
+
+/* ── scroll padding ── */
+.pb-nav{height:20px}
+
+/* ── toast ── */
+#toast{position:absolute;bottom:calc(var(--nav-h)+16px);left:50%;transform:translateX(-50%) translateY(16px);background:var(--dark);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;white-space:nowrap;z-index:999;opacity:0;transition:.25s ease;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── page transition overlay ── */
+#overlay{position:absolute;inset:0;background:rgba(255,255,255,0);z-index:500;pointer-events:none;transition:background .15s}
+
+/* ═══════════════════════════════════
+   A — WELCOME
+═══════════════════════════════════ */
+#s-welcome{background:var(--dark)}
+.wlc-shapes{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.wlc-c1{position:absolute;width:320px;height:320px;background:radial-gradient(circle,rgba(42,157,143,.22) 0%,transparent 70%);top:-90px;right:-70px;border-radius:50%}
+.wlc-c2{position:absolute;width:200px;height:200px;background:radial-gradient(circle,rgba(233,196,106,.18) 0%,transparent 70%);bottom:140px;left:-50px;border-radius:50%}
+.wlc-dots{position:absolute;top:70px;left:22px;opacity:.12;background-image:radial-gradient(circle,#E9C46A 1.5px,transparent 1.5px);background-size:20px 20px;width:120px;height:120px}
+.wlc-inner{position:relative;z-index:1;padding:60px 24px 0}
+.wlc-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(42,157,143,.2);border:1px solid rgba(42,157,143,.35);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;color:var(--teal);letter-spacing:.08em;text-transform:uppercase;margin-bottom:22px}
+.wlc-dot{width:6px;height:6px;background:var(--teal);border-radius:50%;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.7)}}
+.wlc-h{font-family:'Syne',sans-serif;font-size:38px;font-weight:800;line-height:1.1;color:#fff;margin-bottom:16px}
+.wlc-h .acc{color:var(--gold)}
+.wlc-sub{font-size:15px;font-weight:300;color:rgba(255,255,255,.5);line-height:1.6;max-width:280px;margin-bottom:36px}
+.role-cards{display:flex;flex-direction:column;gap:12px;padding:0 24px}
+.role-card{border-radius:20px;padding:22px;cursor:pointer;position:relative;overflow:hidden;transition:transform .2s}
+.role-card:active{transform:scale(.97)}
+.role-card.fresh{background:linear-gradient(135deg,var(--peach) 0%,var(--coral) 100%)}
+.role-card.club{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12)}
+.role-icon{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:14px}
+.role-card.club .role-icon{background:rgba(255,255,255,.1)}
+.role-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:4px}
+.role-desc{font-size:13px;font-weight:300;color:rgba(255,255,255,.7);line-height:1.5}
+.role-arr{position:absolute;right:20px;top:50%;transform:translateY(-50%);width:32px;height:32px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.role-arr svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round}
+.wlc-guest{text-align:center;font-size:13px;color:rgba(255,255,255,.38);cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:20px 0 30px;position:relative;z-index:1}
+
+/* ═══════════════════════════════════
+   B1 — EXPLORE
+═══════════════════════════════════ */
+#s-explore{background:var(--off)}
+.exp-header{background:var(--white);padding:14px 20px 18px;border-bottom:1px solid rgba(38,70,83,.06)}
+.exp-toprow{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.exp-greet{font-size:13px;color:var(--text3);margin-bottom:2px}
+.exp-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--text)}
+.exp-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--peach),var(--coral));display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
+.search-bar{display:flex;align-items:center;gap:10px;background:var(--light);border-radius:13px;padding:10px 14px;cursor:pointer}
+.search-bar svg{width:17px;height:17px;stroke:var(--text3);fill:none;stroke-width:2;stroke-linecap:round;flex-shrink:0}
+.search-bar span{font-size:14px;color:var(--text3);font-weight:300}
+.match-banner{margin:14px 20px;background:linear-gradient(135deg,var(--dark) 0%,#1e3a44 100%);border-radius:20px;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;overflow:hidden;position:relative;cursor:pointer}
+.match-banner::before{content:'';position:absolute;right:-20px;top:-20px;width:100px;height:100px;background:radial-gradient(circle,rgba(42,157,143,.3) 0%,transparent 70%);border-radius:50%}
+.mbanner-lbl{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:4px}
+.mbanner-ttl{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#fff;line-height:1.3;max-width:170px}
+.mbanner-btn{background:var(--gold);color:var(--dark);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;padding:9px 14px;border-radius:18px;white-space:nowrap;cursor:pointer;position:relative;z-index:1;flex-shrink:0}
+
+/* horizontal club cards */
+.hscroll{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding:0 20px 12px 20px}
+.hscroll::-webkit-scrollbar{display:none}
+.club-card-h{flex-shrink:0;width:148px;background:var(--white);border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(38,70,83,.07);cursor:pointer;transition:opacity .2s ease}
+.club-card-h.hidden{display:none}
+.recruit-card.hidden{display:none}
+.act-card.hidden{display:none}
+.hidden{display:none}
+.cch-img{height:88px;display:flex;align-items:center;justify-content:center;font-size:30px}
+.cch-body{padding:10px 12px 12px}
+.cch-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
+.cch-desc{font-size:11px;color:var(--text3);line-height:1.4;margin-bottom:7px}
+.cch-tags{display:flex;gap:4px;flex-wrap:wrap}
+.mini-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:var(--light);color:var(--text2);font-weight:500}
+.mini-warm{background:rgba(244,162,97,.15);color:var(--coral)}
+
+/* activity cards */
+.act-card{background:var(--white);border-radius:16px;overflow:hidden;margin-bottom:10px;box-shadow:0 2px 10px rgba(38,70,83,.06);cursor:pointer}
+.act-cover{height:110px;display:flex;align-items:center;justify-content:center;font-size:40px;position:relative}
+.act-cover-badge{position:absolute;top:10px;left:10px;background:rgba(38,70,83,.7);color:#fff;font-size:10px;font-weight:600;padding:3px 8px;border-radius:8px;letter-spacing:.04em}
+.act-body{padding:12px 14px}
+.act-org{font-size:11px;color:var(--text3);margin-bottom:2px}
+.act-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px}
+.act-meta{display:flex;gap:8px;flex-wrap:wrap}
+.act-meta span{font-size:11px;color:var(--text2)}
+
+/* ═══════════════════════════════════
+   B2 — SEARCH
+═══════════════════════════════════ */
+#s-search{background:var(--off)}
+.search-header{background:var(--white);padding:14px 0 0;border-bottom:1px solid rgba(38,70,83,.06)}
+.search-input-row{display:flex;align-items:center;gap:10px;padding:14px 20px 10px}
+.search-input-wrap{flex:1;display:flex;align-items:center;gap:9px;background:var(--light);border-radius:13px;padding:10px 14px}
+.search-input-wrap svg{width:16px;height:16px;stroke:var(--text3);fill:none;stroke-width:2;stroke-linecap:round;flex-shrink:0}
+.search-input-wrap input{border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;width:100%}
+.search-cancel{font-size:14px;color:var(--coral);font-weight:500;cursor:pointer;white-space:nowrap}
+.filter-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:12px 20px 0}
+.filter-row::-webkit-scrollbar{display:none}
+.filter-pill{flex-shrink:0;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;background:var(--white);color:var(--text2);border:1.5px solid rgba(38,70,83,.1)}
+.filter-pill.on{background:var(--dark);color:#fff;border-color:var(--dark)}
+.result-tabs{display:flex;gap:0;border-bottom:1px solid rgba(38,70,83,.07);background:var(--white);padding:0 20px;margin-bottom:0}
+.rtab{flex:1;text-align:center;padding:11px 0;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;position:relative}
+.rtab.on{color:var(--coral)}
+.rtab.on::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:2px;background:var(--coral);border-radius:2px 2px 0 0}
+
+/* ═══════════════════════════════════
+   B4 — CLUB MAIN PAGE
+═══════════════════════════════════ */
+#s-club{background:var(--off)}
+.club-hero{height:210px;position:relative;display:flex;align-items:flex-end;padding:0 20px 20px;overflow:hidden}
+.club-hero-bg{position:absolute;inset:0;background:linear-gradient(145deg,var(--dark) 0%,#1B3A44 100%)}
+.club-hero-pattern{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(42,157,143,.1) 1px,transparent 1px);background-size:24px 24px}
+.club-hero-emoji{position:absolute;right:24px;top:34px;font-size:76px;opacity:.85}
+.hero-top-btns{position:absolute;top:14px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:center}
+.hero-back{width:32px;height:32px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.hero-back svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round}
+.hero-actions{display:flex;gap:8px}
+.hero-act{width:32px;height:32px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.hero-act svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;transition:.3s}
+.hero-act.liked svg{stroke:#E76F51;fill:#E76F51}
+.club-verified{display:inline-flex;align-items:center;gap:4px;background:rgba(42,157,143,.25);border:1px solid rgba(42,157,143,.4);padding:3px 8px;border-radius:10px;font-size:10px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.club-name-lg{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#fff;margin-bottom:2px;position:relative;z-index:1}
+.club-slogan{font-size:13px;color:rgba(255,255,255,.55);font-style:italic;position:relative;z-index:1}
+.club-stats-row{background:var(--white);display:flex;border-bottom:1px solid rgba(38,70,83,.06)}
+.cstat{flex:1;padding:14px 0;text-align:center;border-right:1px solid rgba(38,70,83,.06)}
+.cstat:last-child{border-right:none}
+.cstat-val{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text);margin-bottom:2px}
+.cstat-lb{font-size:10px;color:var(--text3);font-weight:500}
+.match-bar{margin:14px 20px;background:linear-gradient(90deg,rgba(233,196,106,.12),rgba(244,162,97,.08));border:1.5px solid rgba(233,196,106,.38);border-radius:14px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.match-ring-wrap{display:flex;align-items:center;gap:10px}
+.match-ring{width:44px;height:44px;border-radius:50%;background:conic-gradient(var(--gold) 0% 87%,var(--light) 87% 100%);display:flex;align-items:center;justify-content:center;position:relative}
+.match-ring::after{content:'';position:absolute;width:32px;height:32px;background:#fff;border-radius:50%}
+.match-ring-v{font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:var(--text);position:relative;z-index:1}
+.match-desc-t{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
+.match-desc-s{font-size:11px;color:var(--text2)}
+.match-why{font-size:12px;font-weight:600;color:var(--coral);cursor:pointer}
+.club-tabs{display:flex;background:var(--white);border-bottom:1px solid rgba(38,70,83,.07);padding:0 20px}
+.ctab{flex:1;text-align:center;padding:12px 0;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;position:relative;letter-spacing:.02em}
+.ctab.on{color:var(--coral)}
+.ctab.on::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:2px;background:var(--coral);border-radius:2px 2px 0 0}
+.ctab-content{animation:.2s ease-in fadeIn}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.qa-answer{max-height:0;overflow:hidden;transition:.3s ease}
+.info-block{padding:16px 20px;background:var(--white);margin-bottom:8px}
+.ib-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px;text-transform:uppercase;letter-spacing:.07em}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ig-item{flex:1}
+.ig-lb{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+.ig-val{font-size:13px;color:var(--text)}
+.tag-grid{display:flex;gap:6px;flex-wrap:wrap}
+.body-text{font-size:13px;color:var(--text2);line-height:1.7}
+
+/* ═══════════════════════════════════
+   B5 — ACTIVITY DETAIL
+═══════════════════════════════════ */
+#s-activity{background:var(--off)}
+.act-hero{height:180px;display:flex;align-items:center;justify-content:center;font-size:64px;position:relative}
+.act-hero-bg{position:absolute;inset:0}
+.act-hero-back{position:absolute;top:14px;left:16px;width:32px;height:32px;background:rgba(0,0,0,.25);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.act-hero-back svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round}
+
+/* ═══════════════════════════════════
+   B6 — RECRUIT DETAIL
+═══════════════════════════════════ */
+#s-recruit{background:var(--off)}
+
+/* ═══════════════════════════════════
+   B7 — APPLY
+═══════════════════════════════════ */
+#s-apply{background:var(--off)}
+.apply-head{background:var(--white);padding:14px 20px 18px;border-bottom:1px solid rgba(38,70,83,.06)}
+.apply-target{display:flex;align-items:center;gap:12px;background:var(--light);border-radius:14px;padding:12px 14px}
+.apply-target-emoji{font-size:26px}
+.apply-target-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px}
+.apply-target-sub{font-size:12px;color:var(--text3)}
+
+/* ═══════════════════════════════════
+   C1 — MATCH GUIDE
+═══════════════════════════════════ */
+#s-match-guide{background:var(--white)}
+.mg-hero{padding:40px 24px 32px;background:linear-gradient(160deg,var(--dark) 0%,#1B3A44 100%);position:relative;overflow:hidden}
+.mg-hero .glow1{position:absolute;right:-30px;top:-30px;width:160px;height:160px;background:radial-gradient(circle,rgba(42,157,143,.25) 0%,transparent 70%);border-radius:50%}
+.mg-hero .glow2{position:absolute;left:0;bottom:-30px;width:120px;height:120px;background:radial-gradient(circle,rgba(233,196,106,.2) 0%,transparent 70%);border-radius:50%}
+.mg-back{width:32px;height:32px;background:rgba(255,255,255,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-bottom:20px;position:relative;z-index:1}
+.mg-back svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round}
+.mg-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(233,196,106,.2);border:1px solid rgba(233,196,106,.3);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;color:var(--gold);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px;position:relative;z-index:1}
+.mg-h{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#fff;line-height:1.2;margin-bottom:10px;position:relative;z-index:1}
+.mg-sub{font-size:14px;color:rgba(255,255,255,.55);line-height:1.6;position:relative;z-index:1}
+.sample-tags{padding:24px 20px 0;display:flex;flex-wrap:wrap;gap:8px}
+.sample-tag{padding:7px 14px;border-radius:20px;font-size:12px;font-weight:500}
+.st1{background:rgba(42,157,143,.12);color:var(--teal)}
+.st2{background:rgba(244,162,97,.15);color:var(--peach)}
+.st3{background:rgba(231,111,81,.12);color:var(--coral)}
+.st4{background:rgba(233,196,106,.2);color:#9a7a1a}
+.st5{background:rgba(38,70,83,.08);color:var(--dark)}
+.mg-start-area{padding:28px 20px 20px}
+.mg-cta{width:100%;padding:16px;border-radius:16px;background:linear-gradient(135deg,var(--gold),var(--peach));border:none;font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--dark);cursor:pointer;letter-spacing:.02em}
+
+/* ═══════════════════════════════════
+   C2 — MATCH QUIZ
+═══════════════════════════════════ */
+#s-match-quiz{background:var(--white)}
+.mq-header{padding:16px 20px 14px;border-bottom:1px solid rgba(38,70,83,.07)}
+.mq-top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.mq-back{width:36px;height:36px;border-radius:50%;background:var(--light);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.mq-back svg{width:16px;height:16px;stroke:var(--text);fill:none;stroke-width:2.2;stroke-linecap:round}
+.mq-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text);flex:1}
+.mq-step{font-size:12px;color:var(--text3);font-weight:500}
+.progress-track{height:4px;background:var(--light);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--coral));border-radius:2px;transition:width .4s ease}
+.mq-body{padding:24px 20px}
+.mq-glabel{font-size:11px;font-weight:700;color:var(--teal);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.mq-question{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:22px}
+.option-list{display:flex;flex-direction:column;gap:10px}
+.opt{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;border:1.5px solid rgba(38,70,83,.1);cursor:pointer;transition:.15s;background:var(--white)}
+.opt.on{border-color:var(--coral);background:rgba(231,111,81,.05)}
+.opt-emoji{font-size:22px}
+.opt-text{font-size:14px;color:var(--text);flex:1}
+.opt-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--mid);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.15s}
+.opt.on .opt-check{background:var(--coral);border-color:var(--coral)}
+.opt.on .opt-check::after{content:'';width:7px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translateY(-1px);display:block}
+.mq-footer{padding:0 20px 16px;display:flex;gap:10px}
+.mq-prev{width:48px;height:48px;border-radius:14px;border:1.5px solid rgba(38,70,83,.12);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.mq-prev svg{width:18px;height:18px;stroke:var(--text2);fill:none;stroke-width:2.2;stroke-linecap:round}
+.mq-next{flex:1;height:48px;border-radius:14px;background:linear-gradient(135deg,var(--gold),var(--peach));border:none;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--dark);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.mq-next svg{width:16px;height:16px;stroke:var(--dark);fill:none;stroke-width:2.5;stroke-linecap:round}
+
+/* ═══════════════════════════════════
+   C3 — MATCH RESULT
+═══════════════════════════════════ */
+#s-match-result{background:var(--off)}
+.mr-hero{background:linear-gradient(145deg,var(--dark) 0%,#1B3A44 100%);padding:18px 20px 24px;position:relative;overflow:hidden}
+.mr-hero .glow1{position:absolute;right:-20px;bottom:-20px;width:140px;height:140px;background:radial-gradient(circle,rgba(42,157,143,.2) 0%,transparent 70%);border-radius:50%}
+.mr-hero .glow2{position:absolute;left:-10px;top:-10px;width:100px;height:100px;background:radial-gradient(circle,rgba(233,196,106,.15) 0%,transparent 70%);border-radius:50%}
+.mr-top{display:flex;align-items:center;gap:10px;margin-bottom:18px;position:relative;z-index:1}
+.mr-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#fff;flex:1}
+.mr-redo{font-size:12px;color:rgba(255,255,255,.45);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.persona-card{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:14px 16px;position:relative;z-index:1}
+.persona-lb{font-size:10px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.persona-tags{display:flex;gap:6px;flex-wrap:wrap}
+.ptag{padding:4px 10px;border-radius:10px;font-size:11px;font-weight:600}
+.pt1{background:rgba(233,196,106,.2);color:var(--gold)}
+.pt2{background:rgba(42,157,143,.2);color:var(--teal)}
+.pt3{background:rgba(244,162,97,.2);color:var(--peach)}
+.result-list{padding:14px 20px}
+.rl-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.rc{background:var(--white);border-radius:18px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 12px rgba(38,70,83,.07);position:relative;overflow:hidden;cursor:pointer}
+.rc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
+.rc.r1::before{background:linear-gradient(180deg,var(--gold),var(--peach))}
+.rc.r2::before{background:linear-gradient(180deg,var(--teal),var(--dark))}
+.rc.r3::before{background:linear-gradient(180deg,var(--mid),#ddd)}
+.rc-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.rc-emoji{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.rc-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--text);flex:1}
+.rc-badge{padding:4px 10px;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:800}
+.rcb-high{background:rgba(233,196,106,.2);color:#9a7a1a}
+.rcb-mid{background:rgba(42,157,143,.15);color:var(--teal)}
+.rcb-low{background:var(--light);color:var(--text2)}
+.rc-reason{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:10px;font-style:italic}
+.rc-acts{display:flex;gap:8px}
+.rca{flex:1;padding:9px;border-radius:10px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;text-align:center;cursor:pointer}
+.rca.p{background:linear-gradient(135deg,var(--peach),var(--coral));color:#fff;border:none}
+.rca.s{background:transparent;border:1.5px solid rgba(38,70,83,.12);color:var(--text2)}
+
+/* ═══════════════════════════════════
+   D — MANAGE DASHBOARD
+═══════════════════════════════════ */
+#s-manage{background:var(--off)}
+.manage-hero{background:linear-gradient(135deg,var(--dark),#1B3A44);padding:18px 20px 24px;position:relative;overflow:hidden}
+.manage-hero .glow1{position:absolute;right:-20px;top:-20px;width:120px;height:120px;background:radial-gradient(circle,rgba(42,157,143,.25) 0%,transparent 70%);border-radius:50%}
+.mgr-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(42,157,143,.2);border:1px solid rgba(42,157,143,.3);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:600;color:var(--teal);letter-spacing:.06em;margin-bottom:10px;position:relative;z-index:1}
+.mgr-row{display:flex;align-items:flex-end;justify-content:space-between;position:relative;z-index:1}
+.mgr-name{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#fff;margin-bottom:2px}
+.mgr-role{font-size:12px;color:rgba(255,255,255,.48)}
+.notif-btn{width:36px;height:36px;background:rgba(255,255,255,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.notif-btn svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round}
+.notif-dot2{position:absolute;top:6px;right:6px;width:8px;height:8px;background:var(--coral);border-radius:50%;border:1.5px solid #1B3A44}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 20px}
+.stat-card{background:var(--white);border-radius:16px;padding:16px;box-shadow:0 2px 10px rgba(38,70,83,.06);cursor:pointer}
+.sc-label{font-size:11px;color:var(--text3);font-weight:500;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+.sc-value{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--text);line-height:1;margin-bottom:4px}
+.sc-trend{font-size:11px;font-weight:600;display:flex;align-items:center;gap:3px}
+.sc-up{color:var(--teal)} .sc-warn{color:var(--coral)}
+.qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 20px;margin-bottom:16px}
+.qa-card{background:var(--white);border-radius:16px;padding:15px;display:flex;align-items:center;gap:11px;box-shadow:0 2px 10px rgba(38,70,83,.06);cursor:pointer;transition:.15s}
+.qa-card:active{transform:scale(.97)}
+.qa-icon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.qi-teal{background:rgba(42,157,143,.12)} .qi-gold{background:rgba(233,196,106,.2)} .qi-coral{background:rgba(231,111,81,.12)} .qi-dark{background:rgba(38,70,83,.08)}
+.qa-label{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--text);line-height:1.3}
+.pending-section{padding:0 20px}
+.ps-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.ps-count{background:var(--coral);color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:8px}
+.pend-item{background:var(--white);border-radius:14px;padding:13px 15px;margin-bottom:8px;display:flex;align-items:center;gap:11px;box-shadow:0 1px 8px rgba(38,70,83,.06);cursor:pointer}
+.pend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.pend-name{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px}
+.pend-meta{font-size:11px;color:var(--text3)}
+.pend-time{font-size:11px;color:var(--text3);white-space:nowrap}
+
+/* ═══════════════════════════════════
+   D2 — EDIT CLUB PAGE
+═══════════════════════════════════ */
+#s-edit-club{background:var(--off)}
+.edit-club-preview{margin:14px 20px;background:linear-gradient(135deg,rgba(42,157,143,.1),rgba(38,70,83,.06));border:1.5px dashed rgba(42,157,143,.4);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.ecp-icon{width:40px;height:40px;border-radius:12px;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:20px}
+.ecp-text .ecp-t{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--teal);margin-bottom:2px}
+.ecp-text .ecp-s{font-size:12px;color:var(--text2)}
+
+/* ═══════════════════════════════════
+   D3 — PUBLISH RECRUIT
+═══════════════════════════════════ */
+#s-publish{background:var(--off)}
+
+/* ═══════════════════════════════════
+   D6 — APPLICATIONS
+═══════════════════════════════════ */
+#s-applications{background:var(--off)}
+.app-item{background:var(--white);border-radius:14px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 8px rgba(38,70,83,.06);cursor:pointer}
+.app-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.app-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px}
+.app-meta{font-size:11px;color:var(--text3)}
+.app-status{padding:4px 10px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap}
+.as-new{background:rgba(231,111,81,.12);color:var(--coral)}
+.as-ok{background:rgba(42,157,143,.12);color:var(--teal)}
+
+/* ═══════════════════════════════════
+   E1 — MESSAGES
+═══════════════════════════════════ */
+#s-messages{background:var(--off)}
+.msg-item{background:var(--white);border-radius:16px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(38,70,83,.06);cursor:pointer;position:relative}
+.msg-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.msg-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px}
+.msg-preview{font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msg-time{font-size:11px;color:var(--text3);white-space:nowrap;align-self:flex-start;margin-top:2px}
+.msg-unread{position:absolute;top:14px;right:14px;width:8px;height:8px;background:var(--coral);border-radius:50%}
+
+/* ── message detail ── */
+#s-msg-detail{background:var(--off)}
+.msgd-header{background:var(--white);padding:12px 20px 14px;border-bottom:1px solid rgba(38,70,83,.07);display:flex;align-items:center;gap:10px}
+.msgd-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.msgd-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text)}
+.msgd-status{font-size:11px;color:var(--teal)}
+.msg-bubbles{padding:16px 20px;display:flex;flex-direction:column;gap:10px}
+.bubble-row{display:flex;gap:8px}
+.bubble-row.me{flex-direction:row-reverse}
+.bubble-av{width:30px;height:30px;border-radius:50%;background:var(--light);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;align-self:flex-end}
+.bubble{max-width:220px;padding:10px 14px;border-radius:18px;font-size:13px;line-height:1.5}
+.bubble.them{background:var(--white);color:var(--text);border-radius:4px 18px 18px 18px;box-shadow:0 1px 6px rgba(38,70,83,.08)}
+.bubble.me{background:linear-gradient(135deg,var(--peach),var(--coral));color:#fff;border-radius:18px 4px 18px 18px}
+.msg-input-bar{padding:10px 16px 12px;background:var(--white);border-top:1px solid rgba(38,70,83,.07);display:flex;gap:10px;align-items:center}
+.msg-input{flex:1;background:var(--light);border:none;border-radius:22px;padding:10px 16px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none}
+.msg-send{width:38px;height:38px;background:var(--coral);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;border:none}
+.msg-send svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round}
+
+/* ═══════════════════════════════════
+   E3 — PROFILE (STUDENT)
+═══════════════════════════════════ */
+#s-profile{background:var(--off)}
+.profile-hero{background:linear-gradient(145deg,var(--dark),#1B3A44);padding:24px 20px 28px;position:relative;overflow:hidden}
+.ph-glow{position:absolute;right:-20px;top:-20px;width:140px;height:140px;background:radial-gradient(circle,rgba(233,196,106,.2) 0%,transparent 70%);border-radius:50%}
+.ph-top{display:flex;align-items:flex-start;justify-content:space-between;position:relative;z-index:1}
+.ph-av{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--peach));display:flex;align-items:center;justify-content:center;font-size:28px;border:3px solid rgba(255,255,255,.2)}
+.ph-settings{width:32px;height:32px;background:rgba(255,255,255,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.ph-settings svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round}
+.ph-name{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff;margin-top:12px;margin-bottom:2px;position:relative;z-index:1}
+.ph-bio{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:14px;position:relative;z-index:1}
+.ph-tags{display:flex;gap:6px;flex-wrap:wrap;position:relative;z-index:1}
+.ph-tag{padding:4px 10px;border-radius:10px;font-size:11px;font-weight:600}
+.pht1{background:rgba(233,196,106,.2);color:var(--gold)} .pht2{background:rgba(42,157,143,.2);color:var(--teal)} .pht3{background:rgba(244,162,97,.2);color:var(--peach)}
+.profile-tabs{display:flex;background:var(--white);border-bottom:1px solid rgba(38,70,83,.07);padding:0 20px}
+.ptab{flex:1;text-align:center;padding:12px 0;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;position:relative}
+.ptab.on{color:var(--coral)}
+.ptab.on::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:2px;background:var(--coral);border-radius:2px 2px 0 0}
+.profile-list-item{background:var(--white);border-radius:14px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 8px rgba(38,70,83,.06);cursor:pointer}
+.pli-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.pli-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px}
+.pli-meta{font-size:11px;color:var(--text3)}
+.pli-status{padding:4px 9px;border-radius:9px;font-size:11px;font-weight:600}
+.ps-pending{background:rgba(233,196,106,.2);color:#9a7a1a}
+.ps-done{background:rgba(42,157,143,.12);color:var(--teal)}
+
+/* ═══════════════════════════════════
+   APPLY SUCCESS
+═══════════════════════════════════ */
+#s-apply-success{background:var(--white);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 32px}
+.success-emoji{font-size:72px;margin-bottom:24px;animation:bounce .6s ease}
+@keyframes bounce{0%,100%{transform:translateY(0)}40%{transform:translateY(-16px)}}
+.success-h{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--text);margin-bottom:12px}
+.success-sub{font-size:15px;color:var(--text2);line-height:1.6;margin-bottom:32px}
+.success-btns{display:flex;flex-direction:column;gap:10px;width:100%}
+.success-btns .btn-primary{padding:15px;font-size:15px;border-radius:16px}
+.success-btns .btn-secondary{padding:15px;font-size:15px;border-radius:16px}
+
+/* ═══════════════════════════════════
+   SETTINGS PAGE
+═══════════════════════════════════ */
+#s-settings{background:var(--off)}
+.settings-item{background:var(--white);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid rgba(38,70,83,.05)}
+.si-left{display:flex;align-items:center;gap:12px}
+.si-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.si-title{font-size:14px;font-weight:500;color:var(--text)}
+.si-sub{font-size:12px;color:var(--text3);margin-top:1px}
+.si-arrow svg{width:16px;height:16px;stroke:var(--mid);fill:none;stroke-width:2;stroke-linecap:round}
+.settings-section-title{padding:18px 20px 8px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em}
+
+/* ═══════════════════════════════════
+   DATA STATS PAGE
+═══════════════════════════════════ */
+#s-stats{background:var(--off)}
+.chart-card{background:var(--white);border-radius:16px;margin:0 20px 12px;padding:16px;box-shadow:0 2px 10px rgba(38,70,83,.06)}
+.chart-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px}
+.bar-chart{display:flex;align-items:flex-end;gap:8px;height:80px}
+.bar-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.bar{border-radius:6px 6px 0 0;width:100%;transition:height .4s ease}
+.bar-lb{font-size:9px;color:var(--text3);white-space:nowrap}
+
+/* ═══════════════════════════════════
+   FAQ PAGE
+═══════════════════════════════════ */
+#s-faq{background:var(--off)}
+.faq-item{background:var(--white);border-radius:14px;padding:14px 16px;margin-bottom:8px;box-shadow:0 1px 8px rgba(38,70,83,.06);cursor:pointer}
+.faq-q{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;display:flex;justify-content:space-between}
+.faq-a{font-size:13px;color:var(--text2);line-height:1.6;display:none}
+.faq-item.open .faq-a{display:block}
+.faq-item.open .faq-q span{color:var(--coral)}
+</style>
+</head>
+<body>
+<div id="shell">
+<div id="phone">
+
+  <!-- STATUS BAR -->
+  <div id="statusbar" class="sb-light">
+    <span class="time">9:41</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="11" rx="2"/><path d="M22 11V13" stroke-width="2"/></svg>
+    </div>
+  </div>
+
+  <!-- SCREENS -->
+  <div id="screens">
+
+  <!-- ════════════════════════════
+       A — WELCOME
+  ════════════════════════════ -->
+  <div class="screen active" id="s-welcome" data-sb="dark">
+    <div class="wlc-shapes"><div class="wlc-c1"></div><div class="wlc-c2"></div><div class="wlc-dots"></div></div>
+    <div class="wlc-inner">
+      <div class="wlc-badge"><div class="wlc-dot"></div>ClubMatch</div>
+      <div class="wlc-h">发现<span class="acc">属于你</span>的<br>社团世界</div>
+      <div class="wlc-sub">探索校园社团，智能匹配，找到你真正热爱的组织</div>
+    </div>
+    <div class="role-cards">
+      <div class="role-card fresh" onclick="go('s-explore')">
+        <div class="role-icon">🎓</div>
+        <div class="role-title">我是新生</div>
+        <div class="role-desc">浏览社团，做智能匹配，<br>找到最适合你的组织</div>
+        <div class="role-arr"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      </div>
+      <div class="role-card club" onclick="go('s-manage')">
+        <div class="role-icon">🏛️</div>
+        <div class="role-title">我是社团负责人</div>
+        <div class="role-desc">发布招新信息，管理成员，<br>触达更多合适的同学</div>
+        <div class="role-arr"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      </div>
+    </div>
+    <div class="wlc-guest" onclick="go('s-explore')">先随便逛逛 →</div>
+  </div>
+
+  <!-- ════════════════════════════
+       B1 — EXPLORE
+  ════════════════════════════ -->
+  <div class="screen" id="s-explore" data-sb="light">
+    <div class="exp-header">
+      <div class="exp-toprow">
+        <div><div class="exp-greet">下午好，小林同学 👋</div><div class="exp-title">发现社团</div></div>
+        <div class="exp-avatar" onclick="go('s-profile')">😊</div>
+      </div>
+      <div class="search-bar" onclick="go('s-search')">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <span>搜索社团、活动、招新…</span>
+      </div>
+    </div>
+
+    <div class="match-banner" onclick="go('s-match-guide')">
+      <div class="match-banner::before"></div>
+      <div><div class="mbanner-lbl">✨ AI 智能匹配</div><div class="mbanner-ttl">还不确定加入哪个？让我们帮你找</div></div>
+      <div class="mbanner-btn">开始匹配</div>
+    </div>
+
+    <div class="chip-row" style="margin-bottom:14px" id="category-filter">
+      <div class="chip on" onclick="filterByCategory(null, this)">全部</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-hd"><div class="sec-title">🔥 热门社团</div><div class="sec-more" onclick="expandAllClubs()">查看全部</div></div>
+      <div class="hscroll" id="clubs-container"></div>
+      <div style="padding:14px 20px;display:none" id="all-clubs-list"></div>
+    </div>
+
+    <div class="sec" style="margin-top:18px">
+      <div class="sec-hd"><div class="sec-title">📅 近期活动</div><div class="sec-more">查看全部</div></div>
+      <div class="act-card" onclick="go('s-activity', {activityId:'a1'})">
+        <div class="act-cover" style="background:linear-gradient(135deg,#264653,#1B3A44)">
+          <span>🎭</span>
+          <div class="act-cover-badge">公开演出</div>
+        </div>
+        <div class="act-body">
+          <div class="act-org">校园戏剧社</div>
+          <div class="act-title">《等待戈多》秋季公演</div>
+          <div class="act-meta"><span>🗓 10月20日 19:00</span><span>📍 大礼堂</span><span>🎟 免费</span></div>
+        </div>
+      </div>
+      <div class="act-card" onclick="go('s-activity', {activityId:'a2'})">
+        <div class="act-cover" style="background:linear-gradient(135deg,rgba(233,196,106,.3),rgba(244,162,97,.2))">
+          <span>📷</span>
+          <div class="act-cover-badge">工作坊</div>
+        </div>
+        <div class="act-body">
+          <div class="act-org">摄影协会</div>
+          <div class="act-title">秋日人像摄影工作坊</div>
+          <div class="act-meta"><span>🗓 10月22日 14:00</span><span>📍 艺术楼101</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec" style="margin-top:18px">
+      <div class="sec-hd"><div class="sec-title">📢 正在招新</div><div class="sec-more">查看全部</div></div>
+      <div class="recruit-card" onclick="go('s-recruit', {clubId:'green'})">
+        <div class="recruit-emoji" style="background:rgba(42,157,143,.1)">🌿</div>
+        <div style="flex:1;min-width:0"><div class="recruit-org">环保公益社</div><div class="recruit-title">2024秋季招新 · 全部门开放</div><div class="recruit-meta"><div class="recruit-deadline">⏰ 10月15日截止</div><div class="recruit-dept">宣传/活动/外联</div></div></div>
+      </div>
+      <div class="recruit-card" onclick="go('s-recruit', {clubId:'guitar'})">
+        <div class="recruit-emoji" style="background:rgba(233,196,106,.15)">🎵</div>
+        <div style="flex:1;min-width:0"><div class="recruit-org">吉他社</div><div class="recruit-title">招募热爱音乐的你</div><div class="recruit-meta"><div class="recruit-deadline">⏰ 10月20日截止</div><div class="recruit-dept">零基础欢迎</div></div></div>
+      </div>
+      <div class="recruit-card" onclick="go('s-recruit', {clubId:'debate'})">
+        <div class="recruit-emoji" style="background:rgba(231,111,81,.1)">🏆</div>
+        <div style="flex:1;min-width:0"><div class="recruit-org">辩论队</div><div class="recruit-title">2024年度辩手招募</div><div class="recruit-meta"><div class="recruit-deadline">⏰ 10月18日截止</div><div class="recruit-dept">需通过初试</div></div></div>
+      </div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       B2 — SEARCH
+  ════════════════════════════ -->
+  <div class="screen" id="s-search" data-sb="light">
+    <div class="search-header">
+      <div class="search-input-row">
+        <div class="search-input-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input placeholder="搜索社团、活动…" value="" id="search-input">
+        </div>
+        <div class="search-cancel" onclick="back()">取消</div>
+      </div>
+      <div class="hscroll" id="type-filter">
+        <div class="filter-pill on" onclick="filterByType('all', this)">全部</div>
+        <div class="filter-pill" onclick="filterByType('club', this)">社团</div>
+        <div class="filter-pill" onclick="filterByType('activity', this)">活动</div>
+      </div>
+      <div class="hscroll">
+        <div class="filter-pill on" onclick="filterSearchResults(null, this)">全部</div>
+        <div class="filter-pill" onclick="filterSearchResults('招新', this)">正在招新</div>
+        <div class="filter-pill" onclick="filterSearchResults('低门槛', this)">低门槛</div>
+        <div class="filter-pill" onclick="filterSearchResults('艺术', this)">艺术类</div>
+        <div class="filter-pill" onclick="filterSearchResults('学术', this)">学术类</div>
+        <div class="filter-pill" onclick="filterSearchResults('职业', this)">职业类</div>
+        <div class="filter-pill" onclick="filterSearchResults('公益', this)">公益类</div>
+      </div>
+    </div>
+    <div style="padding:14px 20px" id="search-results-container">
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       B4 — CLUB PAGE
+  ════════════════════════════ -->
+  <div class="screen" id="s-club" data-sb="dark">
+    <div class="club-hero">
+      <div class="club-hero-bg"></div>
+      <div class="club-hero-pattern"></div>
+      <div class="club-hero-emoji">🎭</div>
+      <div class="hero-top-btns">
+        <div class="hero-back" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+        <div class="hero-actions">
+          <div class="hero-act" id="heart-btn" onclick="toggleLike(this)"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+          <div class="hero-act" onclick="toast('链接已复制')"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div>
+        </div>
+      </div>
+      <div style="position:relative;z-index:1">
+        <div class="club-verified">✓ 已认证社团</div>
+        <div class="club-name-lg">校园戏剧社</div>
+        <div class="club-slogan">"让每个人都能登上舞台"</div>
+      </div>
+    </div>
+
+    <div class="club-stats-row">
+      <div class="cstat"><div class="cstat-val">156</div><div class="cstat-lb">成员</div></div>
+      <div class="cstat"><div class="cstat-val">3年</div><div class="cstat-lb">历史</div></div>
+      <div class="cstat"><div class="cstat-val">12次</div><div class="cstat-lb">演出</div></div>
+      <div class="cstat"><div class="cstat-val">4.9⭐</div><div class="cstat-lb">评分</div></div>
+    </div>
+
+    <div class="match-bar" onclick="go('s-match-result')">
+      <div class="match-ring-wrap">
+        <div class="match-ring"><div class="match-ring-v">87%</div></div>
+        <div><div class="match-desc-t">与你高度匹配</div><div class="match-desc-s">符合你的兴趣和投入偏好</div></div>
+      </div>
+      <div class="match-why">查看原因 →</div>
+    </div>
+
+    <div class="club-tabs">
+      <div class="ctab on" onclick="switchCtab(this, 'overview')">概览</div>
+      <div class="ctab" onclick="switchCtab(this, 'recruitment')">招新</div>
+      <div class="ctab" onclick="switchCtab(this, 'activities')">活动</div>
+      <div class="ctab" onclick="switchCtab(this, 'qa')">问答</div>
+    </div>
+
+    <!-- 概览标签页 -->
+    <div id="ctab-overview" class="ctab-content" style="display:block">
+      <div class="info-block">
+        <div class="ib-title">基本信息</div>
+        <div class="info-grid">
+          <div class="ig-item"><div class="ig-lb">活动时间</div><div class="ig-val">每周三晚19:00</div></div>
+          <div class="ig-item"><div class="ig-lb">时间投入</div><div class="ig-val">每周3-5小时</div></div>
+          <div class="ig-item"><div class="ig-lb">加入门槛</div><div class="ig-val">零基础欢迎</div></div>
+          <div class="ig-item"><div class="ig-lb">规模</div><div class="ig-val">中型 50-200人</div></div>
+        </div>
+      </div>
+      <div class="info-block">
+        <div class="ib-title">标签</div>
+        <div class="tag-grid"><span class="tag tag-teal">🎭 舞台表演</span><span class="tag tag-peach">✍️ 剧本创作</span><span class="tag tag-coral">👥 团队协作</span><span class="tag tag-gold">🏆 年度公演</span><span class="tag tag-gray">低门槛</span><span class="tag tag-warm">表达型</span></div>
+      </div>
+      <div class="info-block">
+        <div class="ib-title">社团简介</div>
+        <div class="body-text">校园戏剧社成立于2021年，致力于为热爱表演艺术的同学提供一个探索自我、展示才华的舞台。我们每学期举办两次公开演出，并不定期组织工作坊和观剧活动。无论你是零基础还是有表演经验，都真诚欢迎！</div>
+      </div>
+    </div>
+
+    <!-- 招新标签页 -->
+    <div id="ctab-recruitment" class="ctab-content" style="display:none">
+      <div class="info-block">
+        <div class="ib-title">近期招新</div>
+        <div class="recruit-card" style="margin-bottom:0" onclick="go('s-recruit')">
+          <div class="recruit-emoji" style="background:rgba(231,111,81,.1)">🎭</div>
+          <div style="flex:1;min-width:0"><div class="recruit-org">校园戏剧社</div><div class="recruit-title">2024秋季招募 · 全方向开放</div><div class="recruit-meta"><div class="recruit-deadline">⏰ 10月25日截止</div><div class="recruit-dept">演出/编剧/舞台/宣传</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 活动标签页 -->
+    <div id="ctab-activities" class="ctab-content" style="display:none">
+      <div id="activities-list" class="info-block"></div>
+    </div>
+
+    <!-- 问答标签页 -->
+    <div id="ctab-qa" class="ctab-content" style="display:none">
+      <!-- 常见问答板块 -->
+      <div id="qa-faq-section"></div>
+      <!-- 用户问答板块 -->
+      <div id="qa-user-section" style="margin-top:20px"></div>
+    </div>
+
+    <div class="cta-bar">
+      <div class="btn-secondary" style="flex:1;padding:13px;font-size:13px" onclick="go('s-msg-detail', {messageTarget: currentContext.clubId})">💬 提问</div>
+      <div class="btn-primary" style="flex:2;padding:13px;font-size:13px" onclick="go('s-recruit', {clubId: currentContext.clubId})">📝 查看招新</div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       B5 — ACTIVITY DETAIL
+  ════════════════════════════ -->
+  <div class="screen" id="s-activity" data-sb="dark">
+    <div class="act-hero-container" style="background:linear-gradient(145deg,#264653,#1B3A44);padding:20px;position:relative;min-height:160px;display:flex;flex-direction:column;justify-content:flex-end">
+      <div class="hero-top-btns">
+        <div class="hero-back" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+        <div class="hero-actions">
+          <div class="hero-act" id="activity-heart-btn" onclick="toggleActivityLike(this)"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+          <div class="hero-act" onclick="toast('链接已复制')"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div>
+        </div>
+      </div>
+      <div style="text-align:center;position:relative;z-index:1">
+        <span class="act-emoji" style="font-size:64px;display:block">🎭</span>
+      </div>
+    </div>
+    <div class="info-block" style="margin-top:0;background:var(--white)">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><span class="act-category-tag tag tag-coral">公开演出</span><span class="act-free-tag tag tag-teal">免费入场</span></div>
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--text);margin-bottom:6px" class="act-name">《等待戈多》秋季公演</div>
+      <div class="act-club-link" style="font-size:13px;color:var(--text3);margin-bottom:2px;cursor:pointer">校园戏剧社 ›</div>
+    </div>
+    <div class="info-block">
+      <div class="ib-title">活动信息</div>
+      <div class="info-grid">
+        <div class="ig-item"><div class="ig-lb">时间</div><div class="ig-val act-time">10月20日 19:00</div></div>
+        <div class="ig-item"><div class="ig-lb">地点</div><div class="ig-val act-venue">校大礼堂</div></div>
+        <div class="ig-item"><div class="ig-lb">入场</div><div class="ig-val act-price">免费开放</div></div>
+        <div class="ig-item"><div class="ig-lb">时长</div><div class="ig-val act-duration">约2小时</div></div>
+      </div>
+    </div>
+    <div class="info-block">
+      <div class="ib-title">活动介绍</div>
+      <div class="body-text act-intro">贝克特经典荒诞派名作《等待戈多》，由我社核心成员历经三个月排练呈现。本次演出将加入现代视觉设计元素，带来全新的观演体验。欢迎全体同学观看！</div>
+    </div>
+    <div class="cta-bar">
+      <div class="btn-secondary" style="flex:1;padding:13px;font-size:13px" onclick="toast('❤️ 已添加到日历')">收藏活动</div>
+      <div class="btn-primary" style="flex:2;padding:13px;font-size:13px" onclick="goToActivityClub()">查看社团主页</div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       B6 — RECRUIT DETAIL
+  ════════════════════════════ -->
+  <div class="screen" id="s-recruit" data-sb="light">
+    <div class="back-row"><div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div><div class="page-title">招新详情</div></div>
+    <div class="info-block" style="margin-top:14px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div class="recruit-emoji" style="width:52px;height:52px;border-radius:14px;background:rgba(231,111,81,.1);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🎭</div>
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text)">2024秋季招募</div>
+          <div class="recruit-org" style="font-size:13px;color:var(--text3)">校园戏剧社</div>
+        </div>
+      </div>
+      <div class="info-grid">
+        <div class="ig-item"><div class="ig-lb">截止日期</div><div class="ig-val" style="color:var(--coral);font-weight:600">10月25日</div></div>
+        <div class="ig-item"><div class="ig-lb">招募方向</div><div class="ig-val">4个部门</div></div>
+        <div class="ig-item"><div class="ig-lb">门槛要求</div><div class="ig-val">零基础欢迎</div></div>
+        <div class="ig-item"><div class="ig-lb">招募人数</div><div class="ig-val">约30人</div></div>
+      </div>
+    </div>
+    <div class="info-block">
+      <div class="ib-title">开放部门</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="background:var(--off);border-radius:12px;padding:12px 14px">
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">🎭 演出部</div>
+          <div style="font-size:12px;color:var(--text2)">参与舞台表演，零基础可学，热情是最重要的</div>
+        </div>
+        <div style="background:var(--off);border-radius:12px;padding:12px 14px">
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">✍️ 编剧部</div>
+          <div style="font-size:12px;color:var(--text2)">负责剧本创作与改编，喜欢文字表达即可</div>
+        </div>
+        <div style="background:var(--off);border-radius:12px;padding:12px 14px">
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">🎨 舞美部</div>
+          <div style="font-size:12px;color:var(--text2)">舞台设计、道具制作，有设计兴趣优先</div>
+        </div>
+        <div style="background:var(--off);border-radius:12px;padding:12px 14px">
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">📢 宣传部</div>
+          <div style="font-size:12px;color:var(--text2)">负责推文、海报、视频，喜欢新媒体运营</div>
+        </div>
+      </div>
+    </div>
+    <div class="info-block">
+      <div class="ib-title">招募流程</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;gap:10px;align-items:center"><div style="width:24px;height:24px;border-radius:50%;background:var(--coral);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div style="font-size:13px;color:var(--text)">提交在线报名表（10月25日前）</div></div>
+        <div style="display:flex;gap:10px;align-items:center"><div style="width:24px;height:24px;border-radius:50%;background:var(--peach);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div><div style="font-size:13px;color:var(--text)">参加面试/试训（10月27-28日）</div></div>
+        <div style="display:flex;gap:10px;align-items:center"><div style="width:24px;height:24px;border-radius:50%;background:var(--teal);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div><div style="font-size:13px;color:var(--text)">录取结果通知（10月30日）</div></div>
+      </div>
+    </div>
+    <div class="cta-bar">
+      <div class="btn-secondary" style="flex:1;padding:13px;font-size:13px" onclick="go('s-msg-detail', {messageTarget: currentContext.clubId})">提问</div>
+      <div class="btn-primary" style="flex:2;padding:13px;font-size:13px" onclick="go('s-apply')">立即报名</div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       B7 — APPLY
+  ════════════════════════════ -->
+  <div class="screen" id="s-apply" data-sb="light">
+    <div class="back-row"><div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div><div class="page-title">提交报名</div></div>
+    <div class="apply-head" style="padding:14px 20px 16px;background:var(--white)">
+      <div class="apply-target">
+        <div class="apply-target-emoji">🎭</div>
+        <div><div class="apply-target-name">校园戏剧社</div><div class="apply-target-sub">2024秋季招募 · 请选择部门</div></div>
+      </div>
+    </div>
+    <div style="padding:16px 20px">
+      <div class="field"><label>姓名</label><input placeholder="你的姓名" value="林晓雨"></div>
+      <div class="field"><label>院系 / 年级</label><input placeholder="如：计算机学院 大一" value="外国语学院 大一"></div>
+      <div class="field"><label>联系方式</label><input placeholder="手机或微信" value="138****8888"></div>
+      <div class="field"><label>申请部门</label>
+        <select><option>演出部</option><option>编剧部</option><option>舞美部</option><option>宣传部</option></select>
+      </div>
+      <div class="field"><label>为什么想加入</label><textarea placeholder="告诉我们你的故事和热情…">我从小喜欢表演，参加过高中话剧社，很希望在大学继续这个爱好，同时认识更多志同道合的朋友！</textarea></div>
+      <div class="field"><label>每周可投入时间</label>
+        <select><option>3小时以内</option><option selected>3-5小时</option><option>5小时以上</option></select>
+      </div>
+      <div class="btn-primary" style="width:100%;padding:15px;font-size:15px;margin-top:8px;border-radius:16px" onclick="go('s-apply-success')">提交报名申请</div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       APPLY SUCCESS
+  ════════════════════════════ -->
+  <div class="screen" id="s-apply-success" data-sb="light">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 32px 0;text-align:center;height:100%">
+      <div style="font-size:72px;margin-bottom:24px;animation:bounce .6s ease">🎉</div>
+      <div class="success-h">报名成功！</div>
+      <div class="success-sub">你的申请已提交给校园戏剧社<br>结果将在 10月30日 前通知你</div>
+      <div style="background:var(--off);border-radius:16px;padding:16px 20px;width:100%;margin-bottom:28px;text-align:left">
+        <div style="font-size:12px;color:var(--text3);margin-bottom:4px">申请信息</div>
+        <div style="font-size:14px;font-weight:500;color:var(--text)">校园戏剧社 · 演出部</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px">申请号：#20241012-0089</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;width:100%">
+        <div class="btn-primary" style="padding:14px;font-size:14px;border-radius:16px" onclick="go('s-profile')">查看我的报名记录</div>
+        <div class="btn-secondary" style="padding:14px;font-size:14px;border-radius:16px" onclick="go('s-explore')">继续浏览其他社团</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════
+       C1 — MATCH GUIDE
+  ════════════════════════════ -->
+  <div class="screen" id="s-match-guide" data-sb="dark">
+    <div class="mg-hero">
+      <div class="glow1"></div><div class="glow2"></div>
+      <div class="mg-back" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+      <div class="mg-badge">✨ AI 智能匹配</div>
+      <div class="mg-h">找到更适合<br>你的社团</div>
+      <div class="mg-sub">通过兴趣、时间安排和参与偏好，为你推荐最匹配的社团和部门</div>
+    </div>
+    <div class="sample-tags">
+      <div class="sample-tag st1">🎨 艺术创作</div>
+      <div class="sample-tag st2">⏱ 低投入</div>
+      <div class="sample-tag st3">🎭 表达型活动</div>
+      <div class="sample-tag st4">🌱 公益导向</div>
+      <div class="sample-tag st5">👥 小圈子</div>
+      <div class="sample-tag st1">🔬 学术钻研</div>
+      <div class="sample-tag st2">💼 职业发展</div>
+      <div class="sample-tag st3">🏆 竞赛导向</div>
+    </div>
+    <div style="padding:20px">
+      <div style="background:var(--off);border-radius:16px;padding:16px;margin-bottom:16px">
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px">匹配流程</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:10px;align-items:center"><div style="width:22px;height:22px;border-radius:50%;background:var(--gold);color:var(--dark);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div><div style="font-size:13px;color:var(--text)">回答 4 组问题（约3分钟）</div></div>
+          <div style="display:flex;gap:10px;align-items:center"><div style="width:22px;height:22px;border-radius:50%;background:var(--peach);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div><div style="font-size:13px;color:var(--text)">AI 生成你的偏好画像</div></div>
+          <div style="display:flex;gap:10px;align-items:center"><div style="width:22px;height:22px;border-radius:50%;background:var(--teal);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div><div style="font-size:13px;color:var(--text)">获得个性化社团推荐列表</div></div>
+        </div>
+      </div>
+      <div class="btn-primary" style="width:100%;padding:16px;font-size:16px;border-radius:16px" onclick="go('s-match-quiz')">开始匹配测试</div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       C2 — MATCH QUIZ
+  ════════════════════════════ -->
+  <div class="screen" id="s-match-quiz" data-sb="light">
+    <div class="mq-header">
+      <div class="mq-top">
+        <div class="mq-back" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+        <div class="mq-title">智能匹配</div>
+        <div class="mq-step" id="quiz-step-label">1 / 4</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="quiz-progress" style="width:25%"></div></div>
+    </div>
+    <div class="mq-body">
+      <div class="mq-glabel">兴趣方向</div>
+      <div class="mq-question">你最感兴趣的活动类型是什么？</div>
+      <div class="option-list">
+        <div class="opt" onclick="selectQuizOption(1, '艺术与创意', this)"><div class="opt-emoji">🎨</div><div class="opt-text">艺术与创意（表演、美术、音乐）</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(1, '体育与竞技', this)"><div class="opt-emoji">⚽</div><div class="opt-text">体育与竞技</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(1, '学术与研究', this)"><div class="opt-emoji">🔬</div><div class="opt-text">学术与研究</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(1, '公益与服务', this)"><div class="opt-emoji">🌱</div><div class="opt-text">公益与服务</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleOtherInput(1, this)"><div class="opt-emoji">✍️</div><div class="opt-text" id="q1-other-label">其他（请填写）</div><div class="opt-check"></div></div>
+        <input type="text" class="other-input" id="q1-other-input" placeholder="请输入自定义答案 (必填)" style="display:none;margin-top:10px;padding:8px;border:1px solid var(--light);border-radius:6px;font-size:14px;border-color:var(--coral)" required>
+      </div>
+    </div>
+    <div class="mq-footer">
+      <div class="mq-prev" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+      <div class="mq-next" onclick="nextMatchQuestion(1, 2)">下一步 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+    </div>
+  </div>
+
+  <!-- Quiz Question 2 -->
+  <div class="screen" id="s-match-quiz-2" data-sb="light">
+    <div class="mq-header">
+      <div class="mq-top">
+        <div class="mq-back" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+        <div class="mq-title">智能匹配</div>
+        <div class="mq-step" id="quiz-step-label">2 / 4</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="quiz-progress" style="width:50%"></div></div>
+    </div>
+    <div class="mq-body">
+      <div class="mq-glabel">参与目标</div>
+      <div class="mq-question">加入社团，你最希望获得什么？（可多选）</div>
+      <div class="option-list">
+        <div class="opt" onclick="toggleMultiOption(2, '认识朋友', this)"><div class="opt-emoji">👥</div><div class="opt-text">认识更多朋友，扩大社交圈</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleMultiOption(2, '培养兴趣', this)"><div class="opt-emoji">🎯</div><div class="opt-text">培养兴趣爱好，丰富课外生活</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleMultiOption(2, '积累经验', this)"><div class="opt-emoji">📄</div><div class="opt-text">积累实践经验，充实简历</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleMultiOption(2, '参与比赛', this)"><div class="opt-emoji">🏆</div><div class="opt-text">参与比赛，挑战自我</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleOtherInput(2, this)"><div class="opt-emoji">✍️</div><div class="opt-text" id="q2-other-label">其他（请填写）</div><div class="opt-check"></div></div>
+        <input type="text" class="other-input" id="q2-other-input" placeholder="请输入自定义答案 (必填)" style="display:none;margin-top:10px;padding:8px;border:1px solid var(--light);border-radius:6px;font-size:14px;border-color:var(--coral)" required>
+      </div>
+    </div>
+    <div class="mq-footer">
+      <div class="mq-prev" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+      <div class="mq-next" onclick="nextMatchQuestion(2, 3)">下一步 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+    </div>
+  </div>
+
+  <!-- Quiz Question 3 -->
+  <div class="screen" id="s-match-quiz-3" data-sb="light">
+    <div class="mq-header">
+      <div class="mq-top">
+        <div class="mq-back" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+        <div class="mq-title">智能匹配</div>
+        <div class="mq-step" id="quiz-step-label">3 / 4</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="quiz-progress" style="width:75%"></div></div>
+    </div>
+    <div class="mq-body">
+      <div class="mq-glabel">时间投入</div>
+      <div class="mq-question">你每周能投入多少时间在社团活动中？</div>
+      <div class="option-list">
+        <div class="opt" onclick="selectQuizOption(3, '1-2小时', this)"><div class="opt-emoji">🕐</div><div class="opt-text">1-2小时，仅周末参加</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(3, '3-5小时', this)"><div class="opt-emoji">📅</div><div class="opt-text">3-5小时，参加主要活动</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(3, '5小时以上', this)"><div class="opt-emoji">⏳</div><div class="opt-text">5小时以上，投入度高</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(3, '时间灵活', this)"><div class="opt-emoji">🎯</div><div class="opt-text">时间灵活，按需参加</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleOtherInput(3, this)"><div class="opt-emoji">✍️</div><div class="opt-text" id="q3-other-label">其他（请填写）</div><div class="opt-check"></div></div>
+        <input type="text" class="other-input" id="q3-other-input" placeholder="请输入自定义答案 (必填)" style="display:none;margin-top:10px;padding:8px;border:1px solid var(--light);border-radius:6px;font-size:14px;border-color:var(--coral)" required>
+      </div>
+    </div>
+    <div class="mq-footer">
+      <div class="mq-prev" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+      <div class="mq-next" onclick="nextMatchQuestion(3, 4)">下一步 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+    </div>
+  </div>
+
+  <!-- Quiz Question 4 -->
+  <div class="screen" id="s-match-quiz-4" data-sb="light">
+    <div class="mq-header">
+      <div class="mq-top">
+        <div class="mq-back" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+        <div class="mq-title">智能匹配</div>
+        <div class="mq-step" id="quiz-step-label">4 / 4</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="quiz-progress" style="width:100%"></div></div>
+    </div>
+    <div class="mq-body">
+      <div class="mq-glabel">参加经验</div>
+      <div class="mq-question">你是否有相关领域的参与经验？</div>
+      <div class="option-list">
+        <div class="opt" onclick="selectQuizOption(4, '完全零基础', this)"><div class="opt-emoji">🌱</div><div class="opt-text">完全零基础，想全新尝试</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(4, '有一点基础', this)"><div class="opt-emoji">🌿</div><div class="opt-text">有一点基础或兴趣</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(4, '有较多经验', this)"><div class="opt-emoji">🌳</div><div class="opt-text">有较多相关经验</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="selectQuizOption(4, '高手或获奖', this)"><div class="opt-emoji">🎖️</div><div class="opt-text">高手或获过奖</div><div class="opt-check"></div></div>
+        <div class="opt" onclick="toggleOtherInput(4, this)"><div class="opt-emoji">✍️</div><div class="opt-text" id="q4-other-label">其他（请填写）</div><div class="opt-check"></div></div>
+        <input type="text" class="other-input" id="q4-other-input" placeholder="请输入自定义答案 (必填)" style="display:none;margin-top:10px;padding:8px;border:1px solid var(--light);border-radius:6px;font-size:14px;border-color:var(--coral)" required>
+      </div>
+    </div>
+    <div class="mq-footer">
+      <div class="mq-prev" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+      <div class="mq-next" onclick="completeMatchQuiz()">查看结果 <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════
+       C3 — MATCH RESULT
+  ════════════════════════════ -->
+  <div class="screen" id="s-match-result" data-sb="dark">
+    <div class="mr-hero">
+      <div class="glow1"></div><div class="glow2"></div>
+      <div class="mr-top">
+        <div class="mq-back" style="background:rgba(255,255,255,.12)" onclick="back()"><svg viewBox="0 0 24 24" stroke="white"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+        <div class="mr-title">✨ 你的匹配结果</div>
+        <div class="mr-redo" onclick="clearAndRestartQuiz()">重新测试</div>
+      </div>
+      <div class="persona-card">
+        <div class="persona-lb">你的偏好画像</div>
+        <div class="persona-tags">
+          <div class="ptag pt1">🌿 低门槛参与</div>
+          <div class="ptag pt2">⏱ 中等投入</div>
+          <div class="ptag pt3">🎨 兴趣探索型</div>
+          <div class="ptag pt1">👥 合作氛围</div>
+        </div>
+      </div>
+    </div>
+    <div class="result-list" id="match-result-list">
+      <div class="rl-title">为你推荐的社团</div>
+      <div class="rc r1" onclick="go('s-club', {clubId:'drama'})">
+        <div class="rc-top"><div class="rc-emoji" style="background:rgba(233,196,106,.15)">🎭</div><div class="rc-name">校园戏剧社</div><div class="rc-badge rcb-high">87%</div></div>
+        <div class="rc-reason">💡 你偏好低门槛、氛围友好的表达型组织，戏剧社开放包容的文化与你的风格高度契合。</div>
+        <div class="rc-acts"><div class="rca s" onclick="event.stopPropagation();toast('❤️ 已收藏')">收藏</div><div class="rca p" onclick="event.stopPropagation();go('s-club', {clubId:'drama'})">查看主页 →</div></div>
+      </div>
+      <div class="rc r2" onclick="go('s-club', {clubId:'broadcast'})">
+        <div class="rc-top"><div class="rc-emoji" style="background:rgba(42,157,143,.12)">📻</div><div class="rc-name">校园广播站</div><div class="rc-badge rcb-mid">79%</div></div>
+        <div class="rc-reason">💡 广播站的策划和播音方向符合你的表达偏好，时间弹性，适合初入大学的你。</div>
+        <div class="rc-acts"><div class="rca s" onclick="event.stopPropagation();toast('❤️ 已收藏')">收藏</div><div class="rca p" onclick="event.stopPropagation();go('s-club', {clubId:'broadcast'})">查看主页 →</div></div>
+      </div>
+      <div class="rc r3" onclick="go('s-club', {clubId:'photo'})">
+        <div class="rc-top"><div class="rc-emoji" style="background:rgba(38,70,83,.07)">📸</div><div class="rc-name">摄影协会</div><div class="rc-badge rcb-low">68%</div></div>
+        <div class="rc-reason">💡 如果你对视觉艺术感兴趣，摄影协会是个低压力的好选择，活动频率也较灵活。</div>
+        <div class="rc-acts"><div class="rca s" onclick="event.stopPropagation();toast('❤️ 已收藏')">收藏</div><div class="rca p" onclick="event.stopPropagation();go('s-club', {clubId:'photo'})">查看主页 →</div></div>
+      </div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       D — MANAGE DASHBOARD
+  ════════════════════════════ -->
+  <div class="screen" id="s-manage" data-sb="dark">
+    <div class="manage-hero">
+      <div class="glow1"></div>
+      <div class="mgr-badge">🏛️ 社团管理员</div>
+      <div class="mgr-row">
+        <div><div class="mgr-name">校园戏剧社</div><div class="mgr-role">Hi，林同学，今天也要加油 👋</div></div>
+        <div class="notif-btn" onclick="go('s-messages')"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><div class="notif-dot2"></div></div>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card" onclick="go('s-stats')"><div class="sc-label">本周访问</div><div class="sc-value">1,284</div><div class="sc-trend sc-up">↑ 23% 较上周</div></div>
+      <div class="stat-card" onclick="toast('收藏详情')"><div class="sc-label">收藏量</div><div class="sc-value">342</div><div class="sc-trend sc-up">↑ 15% 较上周</div></div>
+      <div class="stat-card" onclick="go('s-stats')"><div class="sc-label">匹配触达</div><div class="sc-value">891</div><div class="sc-trend sc-up">↑ 41% 本周</div></div>
+      <div class="stat-card" onclick="go('s-applications')"><div class="sc-label">待处理报名</div><div class="sc-value" style="color:var(--coral)">28</div><div class="sc-trend sc-warn">⚠ 需处理</div></div>
+    </div>
+    <div style="padding:0 20px;margin-bottom:10px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text)">快捷操作</div>
+    <div class="qa-grid">
+      <div class="qa-card" onclick="go('s-edit-club')"><div class="qa-icon qi-teal">✏️</div><div class="qa-label">编辑社团主页</div></div>
+      <div class="qa-card" onclick="go('s-publish')"><div class="qa-icon qi-gold">📢</div><div class="qa-label">发布招新公告</div></div>
+      <div class="qa-card" onclick="go('s-applications')"><div class="qa-icon qi-coral">📋</div><div class="qa-label">查看报名表</div></div>
+      <div class="qa-card" onclick="go('s-faq')"><div class="qa-icon qi-dark">💬</div><div class="qa-label">留言管理</div></div>
+    </div>
+    <div class="pending-section">
+      <div class="ps-title">最新报名申请 <div class="ps-count">28</div></div>
+      <div class="pend-item" onclick="go('s-applications')">
+        <div class="pend-dot" style="background:var(--coral)"></div>
+        <div style="flex:1;min-width:0"><div class="pend-name">张晓雨 · 大一</div><div class="pend-meta">申请部门：宣传部</div></div>
+        <div class="pend-time">10分钟前</div>
+      </div>
+      <div class="pend-item" onclick="go('s-applications')">
+        <div class="pend-dot" style="background:var(--coral)"></div>
+        <div style="flex:1;min-width:0"><div class="pend-name">李明哲 · 大一</div><div class="pend-meta">申请部门：演出部</div></div>
+        <div class="pend-time">32分钟前</div>
+      </div>
+      <div class="pend-item" onclick="go('s-faq')">
+        <div class="pend-dot" style="background:var(--teal)"></div>
+        <div style="flex:1;min-width:0"><div class="pend-name">王小雯 · 大二</div><div class="pend-meta">留言：请问排练时间如何安排？</div></div>
+        <div class="pend-time">1小时前</div>
+      </div>
+      <div class="pend-item" onclick="go('s-applications')">
+        <div class="pend-dot" style="background:var(--coral)"></div>
+        <div style="flex:1;min-width:0"><div class="pend-name">陈瑞 · 大一</div><div class="pend-meta">申请部门：编剧部</div></div>
+        <div class="pend-time">2小时前</div>
+      </div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       D2 — EDIT CLUB
+  ════════════════════════════ -->
+  <div class="screen" id="s-edit-club" data-sb="light">
+    <div class="back-row"><div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div><div class="page-title">编辑社团主页</div></div>
+    <div class="edit-club-preview">
+      <div class="ecp-icon">🎭</div>
+      <div class="ecp-text"><div class="ecp-t">预览主页效果</div><div class="ecp-s">查看当前展示效果</div></div>
+      <svg style="margin-left:auto" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round" width="16" height="16"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </div>
+    <div style="padding:0 20px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 10px">基础信息</div>
+      <div class="field"><label>社团名称</label><input value="校园戏剧社"></div>
+      <div class="field"><label>一句话定位</label><input value="让每个人都能登上舞台"></div>
+      <div class="field"><label>社团简介</label><textarea>校园戏剧社成立于2021年，致力于为热爱表演艺术的同学提供一个探索自我、展示才华的舞台。</textarea></div>
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 10px">标签与属性</div>
+      <div class="field"><label>时间投入</label><select><option selected>每周3-5小时</option><option>每周1-3小时</option><option>每周5小时以上</option></select></div>
+      <div class="field"><label>加入门槛</label><select><option selected>零基础欢迎</option><option>需要基础</option><option>需通过审核</option></select></div>
+      <div class="field"><label>适合人群（标签，逗号分隔）</label><input value="喜欢表演, 文艺青年, 想尝试新事物"></div>
+      <div style="display:flex;gap:10px;margin-top:6px;padding-bottom:20px">
+        <div class="btn-secondary" style="flex:1;padding:13px;font-size:13px" onclick="toast('草稿已保存')">保存草稿</div>
+        <div class="btn-primary" style="flex:2;padding:13px;font-size:13px" onclick="toast('✅ 主页已更新发布')">发布更新</div>
+      </div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       D3 — PUBLISH RECRUIT
+  ════════════════════════════ -->
+  <div class="screen" id="s-publish" data-sb="light">
+    <div class="back-row"><div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div><div class="page-title">发布招新公告</div></div>
+    <div style="padding:14px 20px">
+      <div class="field"><label>公告标题</label><input placeholder="如：2024秋季招募 · 全部门开放"></div>
+      <div class="field"><label>招募方向（可多选）</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+          <div class="chip on" onclick="this.classList.toggle('on');this.classList.toggle('off')">演出部</div>
+          <div class="chip on" onclick="this.classList.toggle('on');this.classList.toggle('off')">编剧部</div>
+          <div class="chip off" onclick="this.classList.toggle('on');this.classList.toggle('off')">舞美部</div>
+          <div class="chip off" onclick="this.classList.toggle('on');this.classList.toggle('off')">宣传部</div>
+        </div>
+      </div>
+      <div class="field"><label>报名截止日期</label><input type="date" value="2024-10-25"></div>
+      <div class="field"><label>门槛要求说明</label><input value="零基础欢迎，热情是最重要的"></div>
+      <div class="field"><label>招募人数</label><input type="number" value="30" placeholder="预计招募人数"></div>
+      <div class="field"><label>招募流程说明</label><textarea placeholder="描述面试/试训流程…">提交报名 → 面试/试训（10.27-28）→ 录取通知（10.30）</textarea></div>
+      <div class="field"><label>报名方式</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+          <div class="chip on">站内报名</div>
+          <div class="chip off" onclick="this.classList.toggle('on');this.classList.toggle('off')">外链表单</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;padding-bottom:20px">
+        <div class="btn-secondary" style="flex:1;padding:13px;font-size:13px" onclick="toast('草稿已保存')">预览</div>
+        <div class="btn-primary" style="flex:2;padding:13px;font-size:13px" onclick="toast('📢 招新公告已发布！');back()">发布公告</div>
+      </div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       D6 — APPLICATIONS
+  ════════════════════════════ -->
+  <div class="screen" id="s-applications" data-sb="light">
+    <div class="back-row"><div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div><div class="page-title">报名表管理</div></div>
+    <div style="padding:12px 20px 8px;display:flex;gap:8px;align-items:center">
+      <div style="flex:1;background:var(--light);border-radius:11px;padding:9px 12px;display:flex;gap:8px;align-items:center">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <span style="font-size:13px;color:var(--text3)">搜索报名人</span>
+      </div>
+      <div style="background:var(--dark);color:#fff;padding:9px 14px;border-radius:11px;font-size:12px;font-weight:600;cursor:pointer" onclick="toast('导出中…')">导出</div>
+    </div>
+    <div style="display:flex;gap:8px;padding:0 20px 12px;overflow-x:auto;scrollbar-width:none">
+      <div class="filter-pill on">全部(28)</div>
+      <div class="filter-pill" onclick="toggleFilter(this)">待处理(20)</div>
+      <div class="filter-pill" onclick="toggleFilter(this)">已通过(6)</div>
+      <div class="filter-pill" onclick="toggleFilter(this)">未录取(2)</div>
+    </div>
+    <div style="padding:0 20px">
+      <div class="app-item"><div class="app-avatar" style="background:rgba(231,111,81,.1)">👩</div><div style="flex:1;min-width:0"><div class="app-name">张晓雨</div><div class="app-meta">外国语学院 大一 · 宣传部</div></div><div class="app-status as-new">待处理</div></div>
+      <div class="app-item"><div class="app-avatar" style="background:rgba(42,157,143,.1)">👨</div><div style="flex:1;min-width:0"><div class="app-name">李明哲</div><div class="app-meta">计算机学院 大一 · 演出部</div></div><div class="app-status as-new">待处理</div></div>
+      <div class="app-item"><div class="app-avatar" style="background:rgba(233,196,106,.15)">👩</div><div style="flex:1;min-width:0"><div class="app-name">刘思远</div><div class="app-meta">艺术学院 大二 · 舞美部</div></div><div class="app-status as-ok">已通过</div></div>
+      <div class="app-item"><div class="app-avatar" style="background:rgba(38,70,83,.08)">👨</div><div style="flex:1;min-width:0"><div class="app-name">陈瑞</div><div class="app-meta">中文系 大一 · 编剧部</div></div><div class="app-status as-new">待处理</div></div>
+      <div class="app-item"><div class="app-avatar" style="background:rgba(231,111,81,.1)">👩</div><div style="flex:1;min-width:0"><div class="app-name">王小雯</div><div class="app-meta">新闻系 大二 · 宣传部</div></div><div class="app-status as-ok">已通过</div></div>
+      <div class="app-item"><div class="app-avatar" style="background:rgba(42,157,143,.1)">👨</div><div style="flex:1;min-width:0"><div class="app-name">赵志远</div><div class="app-meta">经管学院 大一 · 演出部</div></div><div class="app-status as-new">待处理</div></div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       D7 — DATA STATS
+  ════════════════════════════ -->
+  <div class="screen" id="s-stats" data-sb="light">
+    <div class="back-row"><div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div><div class="page-title">数据统计</div></div>
+    <div style="padding:14px 20px 0">
+      <div style="display:flex;gap:10px;margin-bottom:14px">
+        <div style="flex:1;background:var(--white);border-radius:14px;padding:14px;box-shadow:0 2px 10px rgba(38,70,83,.06)">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">本周主页访问</div>
+          <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--text)">1,284</div>
+          <div style="font-size:11px;color:var(--teal);font-weight:600">↑ 23%</div>
+        </div>
+        <div style="flex:1;background:var(--white);border-radius:14px;padding:14px;box-shadow:0 2px 10px rgba(38,70,83,.06)">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">报名转化率</div>
+          <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--text)">4.7%</div>
+          <div style="font-size:11px;color:var(--teal);font-weight:600">↑ 1.2%</div>
+        </div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">近7天访问量</div>
+      <div class="bar-chart">
+        <div class="bar-wrap"><div class="bar" style="height:40%;background:rgba(233,196,106,.4)"></div><div class="bar-lb">Mon</div></div>
+        <div class="bar-wrap"><div class="bar" style="height:55%;background:rgba(233,196,106,.5)"></div><div class="bar-lb">Tue</div></div>
+        <div class="bar-wrap"><div class="bar" style="height:45%;background:rgba(233,196,106,.45)"></div><div class="bar-lb">Wed</div></div>
+        <div class="bar-wrap"><div class="bar" style="height:70%;background:rgba(244,162,97,.6)"></div><div class="bar-lb">Thu</div></div>
+        <div class="bar-wrap"><div class="bar" style="height:85%;background:rgba(231,111,81,.7)"></div><div class="bar-lb">Fri</div></div>
+        <div class="bar-wrap"><div class="bar" style="height:100%;background:var(--coral)"></div><div class="bar-lb">Sat</div></div>
+        <div class="bar-wrap"><div class="bar" style="height:78%;background:rgba(244,162,97,.7)"></div><div class="bar-lb">Sun</div></div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">流量来源</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px"><span>智能匹配推荐</span><span style="font-weight:600">41%</span></div><div style="height:6px;background:var(--light);border-radius:3px"><div style="height:100%;width:41%;background:var(--teal);border-radius:3px"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px"><span>Explore 首页</span><span style="font-weight:600">28%</span></div><div style="height:6px;background:var(--light);border-radius:3px"><div style="height:100%;width:28%;background:var(--gold);border-radius:3px"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px"><span>搜索</span><span style="font-weight:600">18%</span></div><div style="height:6px;background:var(--light);border-radius:3px"><div style="height:100%;width:18%;background:var(--peach);border-radius:3px"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px"><span>外部分享</span><span style="font-weight:600">13%</span></div><div style="height:6px;background:var(--light);border-radius:3px"><div style="height:100%;width:13%;background:var(--coral);border-radius:3px"></div></div></div>
+      </div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       D8 — FAQ MANAGE
+  ════════════════════════════ -->
+  <div class="screen" id="s-faq" data-sb="light">
+    <div class="back-row"><div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div><div class="page-title">FAQ / 留言管理</div></div>
+    <div style="padding:14px 20px 8px;display:flex;gap:8px">
+      <div class="filter-pill on">全部(12)</div>
+      <div class="filter-pill" onclick="toggleFilter(this)">待回复(5)</div>
+      <div class="filter-pill" onclick="toggleFilter(this)">已回复(7)</div>
+    </div>
+    <div style="padding:8px 20px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">常见问题预设</div>
+      <div class="faq-item open" onclick="this.classList.toggle('open')">
+        <div class="faq-q"><span>零基础可以加入吗？</span><span>▾</span></div>
+        <div class="faq-a">完全可以！我们欢迎所有对表演感兴趣的同学，会在新成员培训中从基础开始。</div>
+      </div>
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-q"><span>排练时间如何安排？</span><span>▾</span></div>
+        <div class="faq-a">固定每周三晚19:00-21:00，演出季会增加额外排练时间，会提前通知。</div>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 8px">用户留言</div>
+      <div class="pend-item" onclick="toast('回复功能开发中')">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--coral);flex-shrink:0"></div>
+        <div style="flex:1;min-width:0"><div class="pend-name">王小雯</div><div class="pend-meta">请问排练时间如何安排？</div></div>
+        <div style="font-size:11px;color:var(--coral);font-weight:500">回复</div>
+      </div>
+      <div class="pend-item" onclick="toast('回复功能开发中')">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--coral);flex-shrink:0"></div>
+        <div style="flex:1;min-width:0"><div class="pend-name">匿名同学</div><div class="pend-meta">男生也可以报名吗？</div></div>
+        <div style="font-size:11px;color:var(--coral);font-weight:500">回复</div>
+      </div>
+      <div class="pend-item" onclick="toast('已回复')">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--teal);flex-shrink:0"></div>
+        <div style="flex:1;min-width:0"><div class="pend-name">陈瑞</div><div class="pend-meta">编剧部需要写过剧本吗？</div></div>
+        <div style="font-size:11px;color:var(--teal);font-weight:500">已回</div>
+      </div>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       E1 — MESSAGES
+  ════════════════════════════ -->
+  <div class="screen" id="s-messages" data-sb="light">
+    <div style="background:var(--white);padding:14px 20px 16px;border-bottom:1px solid rgba(38,70,83,.06)">
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--text)">消息中心</div>
+    </div>
+    <div style="padding:14px 20px" id="messages-list-container"></div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       E2 — MSG DETAIL
+  ════════════════════════════ -->
+  <div class="screen" id="s-msg-detail" data-sb="light">
+    <div class="msgd-header">
+      <div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2.2" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+      <div class="msgd-avatar" style="background:rgba(38,70,83,.08)">🎭</div>
+      <div style="flex:1"><div class="msgd-name">校园戏剧社</div><div class="msgd-status">通常在24小时内回复</div></div>
+      <div onclick="go('s-club')" style="font-size:12px;color:var(--coral);font-weight:500;cursor:pointer">查看主页</div>
+    </div>
+    <div class="msg-bubbles">
+      <div class="bubble-row">
+        <div class="bubble-av">🎭</div>
+        <div class="bubble them">你好！欢迎咨询校园戏剧社 🎭<br>有什么想了解的吗？</div>
+      </div>
+      <div class="bubble-row me">
+        <div class="bubble-av">😊</div>
+        <div class="bubble me">请问零基础可以报名演出部吗？我在高中没有表演经验</div>
+      </div>
+      <div class="bubble-row">
+        <div class="bubble-av">🎭</div>
+        <div class="bubble them">完全可以！我们特别欢迎零基础的同学，我们相信热情比经验更重要 ✨<br><br>我们会在入社后安排系统的基础训练，请放心报名！</div>
+      </div>
+      <div class="bubble-row me">
+        <div class="bubble-av">😊</div>
+        <div class="bubble me">太好了！那每周的时间要求大概是多少呢</div>
+      </div>
+      <div class="bubble-row">
+        <div class="bubble-av">🎭</div>
+        <div class="bubble them">固定每周三晚19:00-21:00排练，演出季前2-3周会增加频率，其余时间比较灵活 🙌</div>
+      </div>
+    </div>
+    <div class="msg-input-bar">
+      <input class="msg-input" placeholder="输入消息…" id="msg-input">
+      <div class="msg-send" onclick="submitQuestion()"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════
+       E3 — PROFILE
+  ════════════════════════════ -->
+  <div class="screen" id="s-profile" data-sb="dark">
+    <div class="profile-hero">
+      <div class="ph-glow"></div>
+      <div class="ph-top">
+        <div class="ph-av">😊</div>
+        <div class="ph-settings" onclick="go('s-settings')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+      </div>
+      <div class="ph-name">林晓雨</div>
+      <div class="ph-bio">外国语学院 · 大一新生 · 喜欢艺术与表达</div>
+      <div class="ph-tags"><div class="ph-tag pht1">🌿 低门槛</div><div class="ph-tag pht2">⏱ 中等投入</div><div class="ph-tag pht3">🎨 兴趣探索</div></div>
+    </div>
+    <div class="profile-tabs">
+      <div class="ptab on" onclick="switchPtab(this,'profile-tab-content','ptab-fav')">收藏</div>
+      <div class="ptab" onclick="switchPtab(this,'profile-tab-content','ptab-apply')">报名</div>
+      <div class="ptab" onclick="switchPtab(this,'profile-tab-content','ptab-history')">浏览</div>
+      <div class="ptab" onclick="switchPtab(this,'profile-tab-content','ptab-msg')">提问</div>
+    </div>
+    <div id="profile-tab-content">
+      <div id="ptab-fav" style="padding:14px 20px" id="profile-favorites-container">
+      </div>
+      <div id="ptab-apply" style="display:none;padding:14px 20px">
+        <div class="profile-list-item" onclick="go('s-apply-success')"><div class="pli-icon" style="background:rgba(38,70,83,.07)">🎭</div><div style="flex:1;min-width:0"><div class="pli-name">校园戏剧社</div><div class="pli-meta">演出部 · 10月25日截止</div></div><div class="pli-status ps-pending">待审核</div></div>
+        <div class="profile-list-item"><div class="pli-icon" style="background:rgba(231,111,81,.1)">🏆</div><div style="flex:1;min-width:0"><div class="pli-name">辩论队</div><div class="pli-meta">辩手方向 · 已结束</div></div><div class="pli-status" style="background:rgba(38,70,83,.07);color:var(--text3)">未录取</div></div>
+      </div>
+      <div id="ptab-history" style="display:none;padding:14px 20px">
+        <div class="profile-list-item" onclick="go('s-club')"><div class="pli-icon" style="background:rgba(38,70,83,.07)">🎭</div><div style="flex:1;min-width:0"><div class="pli-name">校园戏剧社</div><div class="pli-meta">今天 10:30 浏览</div></div></div>
+        <div class="profile-list-item" onclick="go('s-activity')"><div class="pli-icon" style="background:rgba(38,70,83,.06)">📅</div><div style="flex:1;min-width:0"><div class="pli-name">《等待戈多》公演</div><div class="pli-meta">今天 10:25 浏览</div></div></div>
+        <div class="profile-list-item" onclick="go('s-club')"><div class="pli-icon" style="background:rgba(42,157,143,.1)">📻</div><div style="flex:1;min-width:0"><div class="pli-name">校园广播站</div><div class="pli-meta">昨天 15:10 浏览</div></div></div>
+      </div>
+      <div id="ptab-msg" style="display:none;padding:14px 20px"></div>
+    </div>
+    <!-- Switch to club admin -->
+    <div style="margin:16px 20px;background:linear-gradient(135deg,rgba(42,157,143,.08),rgba(38,70,83,.05));border:1.5px dashed rgba(42,157,143,.3);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="go('s-manage')">
+      <div style="width:38px;height:38px;border-radius:11px;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:18px">🏛️</div>
+      <div style="flex:1"><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--teal)">切换到社团管理身份</div><div style="font-size:12px;color:var(--text2)">你也是某社团的管理员</div></div>
+      <svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       E3-ADMIN — PROFILE (ADMIN)
+  ════════════════════════════ -->
+  <div class="screen" id="s-profile-admin" data-sb="dark">
+    <div class="profile-hero" style="background:linear-gradient(145deg,#1B6A5A,#0D4A3A)">
+      <div class="ph-glow"></div>
+      <div class="ph-top">
+        <div class="ph-av" style="background:linear-gradient(135deg,var(--teal),#22857a)">🏛️</div>
+        <div class="ph-settings" onclick="go('s-settings')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+      </div>
+      <div class="ph-name">校园戏剧社</div>
+      <div class="ph-bio">社团管理员 · 林晓雨 · 创建于2021年</div>
+      <div class="ph-tags"><div class="ph-tag pht1">📊 156成员</div><div class="ph-tag pht2">🎭 艺术表演</div><div class="ph-tag pht3">✨ 4.9⭐</div></div>
+    </div>
+    <div class="profile-tabs">
+      <div class="ptab on" onclick="switchPtab(this,'profile-admin-tab-content','admin-tab-overview')">概览</div>
+      <div class="ptab" onclick="switchPtab(this,'profile-admin-tab-content','admin-tab-members')">成员</div>
+      <div class="ptab" onclick="switchPtab(this,'profile-admin-tab-content','admin-tab-recruit')">招新</div>
+    </div>
+    <div id="profile-admin-tab-content">
+      <div id="admin-tab-overview" style="padding:14px 20px">
+        <div class="profile-list-item" onclick="go('s-manage')"><div class="pli-icon" style="background:rgba(42,157,143,.12);color:var(--teal)">📊</div><div style="flex:1;min-width:0"><div class="pli-name">管理仪表板</div><div class="pli-meta">查看数据统计和事务</div></div><svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+        <div class="profile-list-item" onclick="go('s-edit-club')"><div class="pli-icon" style="background:rgba(42,157,143,.12);color:var(--teal)">✏️</div><div style="flex:1;min-width:0"><div class="pli-name">编辑社团信息</div><div class="pli-meta">修改主页内容和描述</div></div><svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+        <div class="profile-list-item" onclick="go('s-faq')"><div class="pli-icon" style="background:rgba(42,157,143,.12);color:var(--teal)">💬</div><div style="flex:1;min-width:0"><div class="pli-name">留言管理</div><div class="pli-meta">回复成员提问（5条待回复）</div></div><div class="pli-status ps-pending">5待处理</div></div>
+      </div>
+      <div id="admin-tab-members" style="display:none;padding:14px 20px">
+        <div class="profile-list-item"><div class="pli-icon" style="background:rgba(38,70,83,.07)">👥</div><div style="flex:1;min-width:0"><div class="pli-name">总成员数</div><div class="pli-meta">156 人</div></div><svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+        <div class="profile-list-item"><div class="pli-icon" style="background:rgba(38,70,83,.07)">⭐</div><div style="flex:1;min-width:0"><div class="pli-name">核心成员</div><div class="pli-meta">12 人（管理团队）</div></div><svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+        <div class="profile-list-item"><div class="pli-icon" style="background:rgba(38,70,83,.07)">📈</div><div style="flex:1;min-width:0"><div class="pli-name">本月新增</div><div class="pli-meta">+23 人</div></div><svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+      </div>
+      <div id="admin-tab-recruit" style="display:none;padding:14px 20px">
+        <div class="profile-list-item" onclick="go('s-publish')"><div class="pli-icon" style="background:rgba(42,157,143,.12);color:var(--teal)">📢</div><div style="flex:1;min-width:0"><div class="pli-name">发布招新公告</div><div class="pli-meta">创建新的招新信息</div></div><svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div>
+        <div class="profile-list-item" onclick="go('s-applications')"><div class="pli-icon" style="background:rgba(42,157,143,.12);color:var(--teal)">📋</div><div style="flex:1;min-width:0"><div class="pli-name">管理报名表</div><div class="pli-meta">当前招新期：28份待处理</div></div><div class="pli-status ps-pending">28待处理</div></div>
+      </div>
+    </div>
+    <!-- Switch back to student -->
+    <div style="margin:16px 20px;background:linear-gradient(135deg,rgba(249,115,22,.08),rgba(249,115,22,.04));border:1.5px dashed rgba(249,115,22,.3);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="go('s-profile')">
+      <div style="width:38px;height:38px;border-radius:11px;background:var(--coral);display:flex;align-items:center;justify-content:center;font-size:18px">🎓</div>
+      <div style="flex:1"><div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--coral)">切换到学生身份</div><div style="font-size:12px;color:var(--text2)">查看个人报名和收藏</div></div>
+      <svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+    </div>
+    <div class="pb-nav"></div>
+  </div>
+
+  <!-- ════════════════════════════
+       E2-ADMIN — MSG DETAIL (ADMIN)
+  ════════════════════════════ -->
+  <div class="screen" id="s-msg-detail-admin" data-sb="light">
+    <div class="msgd-header">
+      <div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2.2" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>
+      <div class="msgd-avatar" style="background:rgba(38,70,83,.08)">👤</div>
+      <div style="flex:1"><div class="msgd-name">林晓雨</div><div class="msgd-status" style="color:var(--coral);font-weight:600">待回复</div></div>
+      <div onclick="toast('更多操作')" style="font-size:12px;color:var(--coral);font-weight:500;cursor:pointer">⋯</div>
+    </div>
+    <div class="msg-bubbles">
+      <div class="bubble-row">
+        <div class="bubble-av">😊</div>
+        <div class="bubble them">我想加入戏剧社，但零基础可以报名吗？参加话剧需要多少时间投入呢？</div>
+      </div>
+      <div class="bubble-row me">
+        <div class="bubble-av">🎭</div>
+        <div class="bubble me">完全可以！我们特别欢迎零基础的同学💪 热情比经验重要得多。固定每周三晚19:00-21:00排练，其他时间很灵活～</div>
+      </div>
+      <div class="bubble-row">
+        <div class="bubble-av">😊</div>
+        <div class="bubble them">太好了！什么时候可以报名？</div>
+      </div>
+    </div>
+    <div class="msg-input-bar">
+      <input class="msg-input" placeholder="输入回复…" value="">
+      <div class="msg-send" onclick="toast('消息已发送')"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════
+       SETTINGS
+  ════════════════════════════ -->
+  <div class="screen" id="s-settings" data-sb="light">
+    <div class="back-row" style="margin-bottom:8px"><div class="back-btn" onclick="back()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div><div class="page-title">设置</div></div>
+    <div class="settings-section-title">账号</div>
+    <div style="background:var(--white);border-radius:16px;overflow:hidden;margin:0 20px">
+      <div class="settings-item" onclick="toast('编辑个人资料')"><div class="si-left"><div class="si-icon" style="background:rgba(244,162,97,.15)">👤</div><div><div class="si-title">个人资料</div><div class="si-sub">修改头像、昵称</div></div></div><div class="si-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div></div>
+      <div class="settings-item" onclick="toast('通知设置')"><div class="si-left"><div class="si-icon" style="background:rgba(42,157,143,.12)">🔔</div><div><div class="si-title">通知设置</div><div class="si-sub">消息、招新通知</div></div></div><div class="si-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div></div>
+      <div class="settings-item" onclick="go('s-manage')" style="border-bottom:none"><div class="si-left"><div class="si-icon" style="background:rgba(38,70,83,.08)">🏛️</div><div><div class="si-title">申请社团管理员认证</div><div class="si-sub">已有认证资格可直接切换</div></div></div><div class="si-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div></div>
+    </div>
+    <div class="settings-section-title">关于</div>
+    <div style="background:var(--white);border-radius:16px;overflow:hidden;margin:0 20px">
+      <div class="settings-item" onclick="toast('意见反馈已记录，感谢！')"><div class="si-left"><div class="si-icon" style="background:rgba(231,111,81,.1)">💬</div><div><div class="si-title">意见反馈</div></div></div><div class="si-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div></div>
+      <div class="settings-item" style="border-bottom:none" onclick="toast('版本 1.0.0')"><div class="si-left"><div class="si-icon" style="background:rgba(233,196,106,.15)">ℹ️</div><div><div class="si-title">关于 ClubMatch</div><div class="si-sub">版本 1.0.0</div></div></div><div class="si-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div></div>
+    </div>
+    <div style="padding:28px 20px;text-align:center"><div style="padding:14px;border-radius:14px;border:1.5px solid rgba(231,111,81,.3);color:var(--coral);font-family:'Syne',sans-serif;font-weight:700;font-size:14px;cursor:pointer" onclick="go('s-welcome')">退出登录</div></div>
+    <div class="pb-nav"></div>
+  </div>
+
+  </div><!-- /screens -->
+
+  <!-- BOTTOM NAV -->
+  <div id="bottomnav">
+    <div class="nv active" id="nav-explore" onclick="navGo('s-explore','nav-explore')">
+      <div class="nv-ic"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      <div class="nv-lb">Explore</div>
+    </div>
+    <div class="nv" id="nav-match" onclick="navGo('s-match-guide','nav-match')">
+      <div class="nv-ic"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+      <div class="nv-lb">Match</div>
+    </div>
+    <div class="nv" id="nav-manage" style="display:none" onclick="navGo('s-manage','nav-manage')">
+      <div class="nv-ic"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+      <div class="nv-lb">Manage</div>
+    </div>
+    <div class="nv" id="nav-messages" onclick="navGo('s-messages','nav-messages')">
+      <div class="nv-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+      <div class="nv-lb">Messages</div>
+    </div>
+    <div class="nv" id="nav-profile" onclick="navGo('s-profile','nav-profile')">
+      <div class="nv-ic"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+      <div class="nv-lb">Profile</div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+</div><!-- /phone -->
+</div><!-- /shell -->
+
+<script src="js/clubs-data.js"></script>
+<script src="js/activities-data.js"></script>
+<script src="js/messages-data.js"></script>
+<script src="js/user-data.js"></script>
+<script>
+/* ═══════════════════════════════════
+   DATA STRUCTURE
+═══════════════════════════════════ */
+const DATA = {
+  activities: {
+    'a1': {id:'a1', clubId:'drama', name:'《等待戈多》秋季公演', emoji:'🎭', category:'公开演出', free:'免费'},
+    'a2': {id:'a2', clubId:'photo', name:'秋日人像摄影工作坊', emoji:'📷', category:'工作坊', free:'有费用'},
+    'a3': {id:'a3', clubId:'broadcast', name:'秋季广播人选拔', emoji:'📻', category:'招募', free:'免费'},
+    'a4': {id:'a4', clubId:'guitar', name:'吉他初级班开课', emoji:'🎵', category:'教学', free:'有费用'},
+  },
+  user: {
+    identity: 'student', // 'student' or 'admin', store current mode
+    adminClubs: ['drama'], // clubs where user is admin
+  }
+};
+
+let currentContext = {
+  clubId: null,
+  activityId: null,
+  messageTarget: null, // which club the message is from
+};
+
+/* ═══════════════════════════════════
+   NAVIGATION ENGINE
+═══════════════════════════════════ */
+const history_stack = ['s-welcome'];
+let current = 's-welcome';
+
+// screens that hide bottom nav
+const NO_NAV = new Set(['s-welcome','s-apply-success']);
+// screens with dark status bar
+const DARK_SB = new Set(['s-welcome','s-club','s-match-guide','s-match-result','s-manage','s-profile','s-profile-admin']);
+
+// Identity-based screen routing
+const IDENTITY_SCREENS = {
+  'student': 'nav-match', // shows Match in nav
+  'admin': 'nav-manage', // shows Manage in nav
+};
+
+function go(id, context = {}){
+  // Check if we're trying to go to the same page without new context
+  if(id === current){
+    if(!context.clubId && !context.activityId && !context.messageTarget) return;
+  }
+  
+  // Update context if provided
+  if(context.clubId) currentContext.clubId = context.clubId;
+  if(context.activityId) currentContext.activityId = context.activityId;
+  if(context.messageTarget) currentContext.messageTarget = context.messageTarget;
+  
+  // Set default values if needed
+  if((id === 's-recruit' || id === 's-msg-detail' || id === 's-apply') && !currentContext.clubId){
+    currentContext.clubId = 'drama'; // default to drama club
+  }
+  
+  const from = document.getElementById(current);
+  const to   = document.getElementById(id);
+  if(!to) return;
+
+  from.classList.remove('active');
+  to.classList.remove('slide-back');
+  to.classList.add('active');
+
+  history_stack.push(id);
+  current = id;
+  updateChrome(id);
+  updatePageContent(id);
+  to.scrollTop = 0;
+}
+
+function back(){
+  if(history_stack.length <= 1) return;
+  history_stack.pop();
+  const prev = history_stack[history_stack.length - 1];
+  
+  const from = document.getElementById(current);
+  const to   = document.getElementById(prev);
+  if(!to) return;
+
+  from.classList.remove('active');
+  to.classList.add('slide-back','active');
+  setTimeout(()=>to.classList.remove('slide-back'),50);
+
+  current = prev;
+  updateChrome(prev);
+  updatePageContent(prev);
+}
+
+function navGo(id, navId){
+  // 调试：打印当前状态
+  console.log('navGo called:', { id, navId, isCompleted: USER_DATA.isMatchCompleted(), hasResult: !!USER_DATA.matchResult });
+  
+  // 特殊处理：如果是 match 导航且已完成测试，直接跳转到结果页面
+  if(navId === 'nav-match' && USER_DATA.isMatchCompleted() && USER_DATA.matchResult){
+    console.log('已完成测试，跳转到结果页面');
+    id = 's-match-result';
+  } else if(navId === 'nav-match'){
+    console.log('未完成测试或无结果，跳转到引导页');
+  }
+  
+  // clear history to root level
+  history_stack.length = 1;
+  history_stack[0] = id;
+  go(id);
+  document.querySelectorAll('.nv').forEach(n=>n.classList.remove('active'));
+  document.getElementById(navId)?.classList.add('active');
+}
+
+// Update page content based on context
+function updatePageContent(id){
+  if(id === 's-club' && currentContext.clubId){
+    updateClubPage(currentContext.clubId);
+    updateHeartButtonState(currentContext.clubId);
+  } else if(id === 's-recruit' && currentContext.clubId){
+    updateRecruitPage(currentContext.clubId);
+  } else if(id === 's-apply' && currentContext.clubId){
+    updateApplyPage(currentContext.clubId);
+  } else if(id === 's-activity' && currentContext.activityId){
+    updateActivityPage(currentContext.activityId);
+  } else if(id === 's-msg-detail' && currentContext.messageTarget){
+    updateMessagePage(currentContext.messageTarget);
+  } else if(id === 's-messages'){
+    updateMessagesCenter();
+  } else if(id === 's-match-quiz'){
+    // 检查是否已完成问卷
+    if(USER_DATA.isMatchCompleted()){
+      // 已完成，直接跳转到结果页面
+      setTimeout(() => {
+        updatePageContent('s-match-result');
+        setScreen('s-match-result');
+      }, 100);
+    } else {
+      // 重置问卷数据
+      quizData = { q1: null, q2: [], q3: null, q4: null, customAnswers: {} };
+    }
+  } else if(id === 's-match-result'){
+    // 检查是否有保存的匹配结果
+    if(USER_DATA.isMatchCompleted() && USER_DATA.matchResult){
+      // 显示保存的结果
+      updateMatchResultPage();
+    } else {
+      // 没有结果，显示提示并跳转到问卷
+      toast('💡 请先完成社团匹配问卷');
+      setTimeout(() => {
+        go('s-match-quiz');
+      }, 800);
+    }
+  } else if(id === 's-profile'){
+    updateProfileFavorites();
+    updateProfileMessages();
+  } else if(id === 's-explore'){
+    initializeClubCards();
+    initializeCategoryFilter();
+  } else if(id === 's-search'){
+    // 清空搜索输入框
+    const searchInput = document.getElementById('search-input');
+    if(searchInput){
+      searchInput.value = '';
+      // 移除旧的事件监听器（防止重复添加）
+      const newSearchInput = searchInput.cloneNode(true);
+      searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+      
+      // 添加新的事件监听器
+      newSearchInput.addEventListener('input', function(e){
+        searchClubs(e.target.value);
+      });
+    }
+    
+    // 初始化搜索结果
+    initializeSearchResults();
+  }
+}
+
+// 更新匹配结果页面
+function updateMatchResultPage(){
+  const result = USER_DATA.matchResult;
+  if(!result || !result.clubs) return;
+  
+  // ========== 显示用户画像 ==========
+  const personaTags = document.querySelector('.persona-tags');
+  if(personaTags && result.userProfile && result.userProfile.tags){
+    const tags = result.userProfile.tags;
+    const colorClasses = ['pt1', 'pt2', 'pt3']; // 红色、绿色、橙色
+    
+    personaTags.innerHTML = tags.map((tag, idx) => {
+      // 随机分配颜色（但同一个结果中颜色保持不变）
+      const tagClass = colorClasses[idx % colorClasses.length];
+      return `<div class="ptag ${tagClass}">${tag}</div>`;
+    }).join('');
+  }
+  
+  // ========== 显示社团推荐 ==========
+  const resultList = document.getElementById('match-result-list');
+  if(!resultList) return;
+  
+  // 构建推荐社团的HTML
+  let html = '<div class="rl-title">为你推荐的社团</div>';
+  
+  result.clubs.forEach((rec, idx) => {
+    const club = CLUBS_DB[rec.clubId];
+    if(!club) return;
+    
+    const badgeClass = rec.score >= 80 ? 'rcb-high' : (rec.score >= 70 ? 'rcb-mid' : 'rcb-low');
+    const emoji = club.emoji || '🎯';
+    const bgStyle = club.cardBg || 'rgba(38,70,83,.07)';
+    
+    html += `<div class="rc" onclick="go('s-club', {clubId:'${rec.clubId}'})">
+      <div class="rc-top">
+        <div class="rc-emoji" style="background:${bgStyle}">${emoji}</div>
+        <div class="rc-name">${club.name}</div>
+        <div class="rc-badge ${badgeClass}">${rec.score}%</div>
+      </div>
+      <div class="rc-reason">💡 ${rec.reason}</div>
+      <div class="rc-acts">
+        <div class="rca s" onclick="event.stopPropagation();USER_DATA.toggleLike('${rec.clubId}');toast('已收藏')">❤️ 收藏</div>
+        <div class="rca p" onclick="event.stopPropagation();go('s-club', {clubId:'${rec.clubId}'})">查看主页 →</div>
+      </div>
+    </div>`;
+  });
+  
+  resultList.innerHTML = html;
+}
+
+function updateClubPage(clubId){
+  const club = CLUBS_DB[clubId];
+  if(!club) return;
+  
+  const clubScreen = document.getElementById('s-club');
+  if(!clubScreen) return;
+  
+  // ========== 顶部信息 ==========
+  clubScreen.querySelector('.club-name-lg').textContent = club.name;
+  clubScreen.querySelector('.club-slogan').textContent = club.slogan;
+  const heroElement = clubScreen.querySelector('.club-hero-emoji');
+  if(heroElement) heroElement.textContent = club.emoji;
+  
+  // ========== 统计数据 ==========
+  const cstatVals = clubScreen.querySelectorAll('.cstat-val');
+  if(cstatVals.length >= 4){
+    cstatVals[0].textContent = club.members;
+    cstatVals[1].textContent = club.history;
+    cstatVals[2].textContent = club.events + '次';
+    cstatVals[3].textContent = club.rating;
+  }
+  
+  // ========== 匹配度 ==========
+  const matchRing = clubScreen.querySelector('.match-ring-v');
+  if(matchRing) matchRing.textContent = club.matchPercent + '%';
+  
+  // ========== 基本信息 ==========
+  const infoGrids = clubScreen.querySelectorAll('.info-grid');
+  if(infoGrids.length > 0){
+    infoGrids[0].innerHTML = `
+      <div class="ig-item"><div class="ig-lb">活动时间</div><div class="ig-val">${club.meetingTime}</div></div>
+      <div class="ig-item"><div class="ig-lb">时间投入</div><div class="ig-val">${club.timeInvestment}</div></div>
+      <div class="ig-item"><div class="ig-lb">加入门槛</div><div class="ig-val">${club.threshold}</div></div>
+      <div class="ig-item"><div class="ig-lb">规模</div><div class="ig-val">${club.scale}</div></div>
+    `;
+  }
+  
+  // ========== 标签 ==========
+  const tagGrid = clubScreen.querySelector('.tag-grid');
+  if(tagGrid){
+    tagGrid.innerHTML = club.tags.map(tag => {
+      let tagClass = 'tag-gray';
+      if(tag.includes('🎭') || tag.includes('表演') || tag.includes('创意')) tagClass = 'tag-teal';
+      else if(tag.includes('✍️') || tag.includes('创作')) tagClass = 'tag-peach';
+      else if(tag.includes('👥')) tagClass = 'tag-coral';
+      else if(tag.includes('🏆')) tagClass = 'tag-gold';
+      else if(tag.includes('型')) tagClass = 'tag-warm';
+      return `<span class="tag ${tagClass}">${tag}</span>`;
+    }).join('');
+  }
+  
+  // ========== 社团简介 ==========
+  const bodyText = clubScreen.querySelector('.body-text');
+  if(bodyText) bodyText.textContent = club.description;
+  
+  // ========== 近期招新卡片 ==========
+  const recruitCard = clubScreen.querySelector('.recruit-card');
+  if(recruitCard){
+    recruitCard.innerHTML = `
+      <div class="recruit-emoji" style="background:${club.cardBg}">${club.emoji}</div>
+      <div style="flex:1;min-width:0">
+        <div class="recruit-org">${club.name}</div>
+        <div class="recruit-title">${club.recruitment.title} · ${club.recruitment.intro}</div>
+        <div class="recruit-meta">
+          <div class="recruit-deadline">⏰ ${club.recruitment.deadline}截止</div>
+          <div class="recruit-dept">${club.departments.join('/')}</div>
+        </div>
+      </div>
+    `;
+    recruitCard.onclick = () => go('s-recruit', {clubId: clubId});
+  }
+  
+  // ========== 活动列表 ==========
+  const activitiesContainer = clubScreen.querySelector('#activities-list');
+  if(activitiesContainer){
+    if(club.activities && club.activities.length > 0){
+      activitiesContainer.innerHTML = `<div class="ib-title">社团活动</div>` + 
+        club.activities.map((activity, idx) => `
+          <div style="background:var(--off);border-radius:12px;padding:14px;margin-bottom:10px">
+            <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text)">${activity}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:4px">社团定期组织的精彩活动</div>
+          </div>
+        `).join('');
+    }
+  }
+  
+  // ========== 问答列表 ==========
+  // 常见问答
+  const qaFaqContainer = clubScreen.querySelector('#qa-faq-section');
+  if(qaFaqContainer){
+    if(club.qa && club.qa.length > 0){
+      qaFaqContainer.innerHTML = `<div class="info-block"><div class="ib-title">❓ 常见问答</div></div>` + 
+        club.qa.map((item, idx) => `
+          <div class="info-block" style="cursor:pointer" onclick="toggleQA(this)">
+            <div style="display:flex;justify-content:space-between;align-items:center;font-weight:600;color:var(--text)">
+              <span style="font-size:14px">${item.q}</span>
+              <span style="font-size:16px;color:var(--text2)">+</span>
+            </div>
+            <div style="max-height:0;overflow:hidden;transition:.3s;margin-top:0" class="qa-answer">
+              <div style="font-size:13px;color:var(--text2);padding-top:10px">${item.a}</div>
+            </div>
+          </div>
+        `).join('');
+    }
+  }
+  
+  // 用户问答
+  const qaUserContainer = clubScreen.querySelector('#qa-user-section');
+  if(qaUserContainer){
+    const clubMessages = MESSAGES_DB ? MESSAGES_DB[currentContext.clubId] : null;
+    const userQA = clubMessages && clubMessages.userQA ? clubMessages.userQA : [];
+    
+    // 构建提问输入框
+    let qaHtml = `
+      <div class="info-block">
+        <div class="ib-title">💬 用户问答</div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <input type="text" id="qa-input-${currentContext.clubId}" placeholder="有什么想问的吗？" style="flex:1;padding:10px 12px;border:1px solid rgba(38,70,83,.15);border-radius:8px;font-size:13px;outline:none" />
+          <button onclick="submitClubQuestion('${currentContext.clubId}')" style="padding:10px 16px;background:var(--teal);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:12px">提问</button>
+        </div>
+      </div>
+    `;
+    
+    // 添加已有的用户问答
+    if(userQA && userQA.length > 0){
+      qaHtml += userQA.map((msg, idx) => `
+        <div class="info-block">
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <div style="font-size:24px">👤</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;color:var(--text);font-size:14px">${msg.asker || '匿名用户'}</div>
+              <div style="font-size:13px;color:var(--text2);margin-top:2px">${msg.q}</div>
+              <div style="display:flex;gap:8px;margin-top:6px">
+                <div style="font-size:11px;background:var(--off);padding:4px 8px;border-radius:6px;color:var(--text3)">${msg.date || '最近'}</div>
+              </div>
+            </div>
+          </div>
+          <!-- 回复 -->
+          ${msg.a ? `<div style="margin-top:12px;margin-left:34px;padding-left:10px;border-left:2px solid rgba(38,70,83,.1)">
+            <div style="font-weight:600;color:var(--teal);font-size:13px">${msg.replier || '社团'}</div>
+            <div style="font-size:13px;color:var(--text);margin-top:4px">${msg.a}</div>
+            <div style="display:flex;gap:12px;margin-top:8px">
+              <div class="qa-like-btn" style="cursor:pointer;display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text3)" onclick="toggleQALike(this, '${currentContext.clubId}', ${idx})">
+                <span>👍</span>
+                <span class="like-count">${msg.likes || 0}</span>
+              </div>
+            </div>
+          </div>` : ''}
+        </div>
+      `).join('');
+    }
+    
+    qaUserContainer.innerHTML = qaHtml;
+  }
+  
+  
+  // ========== 更新英雄背景颜色 ==========
+  const heroDiv = clubScreen.querySelector('.club-hero');
+  if(heroDiv) heroDiv.style.background = club.heroGradient;
+  
+  // ========== 按钮事件 ==========
+  const ctaBar = clubScreen.querySelector('.cta-bar');
+  if(ctaBar){
+    const buttons = ctaBar.querySelectorAll('[class*="btn-"]');
+    if(buttons.length >= 2){
+      buttons[0].onclick = () => go('s-msg-detail', {messageTarget: clubId});
+      buttons[1].onclick = () => go('s-recruit', {clubId: clubId});
+    }
+  }
+}
+
+function updateActivityPage(activityId){
+  console.log('updateActivityPage called with:', activityId);
+  console.log('ACTIVITIES_DB available?', typeof ACTIVITIES_DB !== 'undefined');
+  
+  if(typeof ACTIVITIES_DB === 'undefined'){
+    console.error('ACTIVITIES_DB is not defined!');
+    return;
+  }
+  
+  const activity = ACTIVITIES_DB[activityId];
+  console.log('Activity found:', activity);
+  
+  if(!activity){
+    console.error('Activity not found for id:', activityId);
+    return;
+  }
+  
+  const club = CLUBS_DB[activity.clubId];
+  const actScreen = document.getElementById('s-activity');
+  if(!actScreen){
+    console.error('s-activity screen not found');
+    return;
+  }
+  
+  console.log('Updating activity page with:', activity.name);
+  
+  // ========== 顶部emoji和背景 ==========
+  const heroEl = actScreen.querySelector('.act-hero-container');
+  const emojiEl = actScreen.querySelector('.act-emoji');
+  if(heroEl && emojiEl){
+    heroEl.style.background = activity.heroGradient;
+    emojiEl.textContent = activity.emoji;
+  }
+  
+  // ========== 标签 ==========
+  const categoryTag = actScreen.querySelector('.act-category-tag');
+  const freeTag = actScreen.querySelector('.act-free-tag');
+  if(categoryTag) categoryTag.textContent = activity.category;
+  if(freeTag) freeTag.textContent = activity.free === '免费' ? '免费入场' : '收费活动';
+  
+  // ========== 标题 ==========
+  const nameEl = actScreen.querySelector('.act-name');
+  if(nameEl) nameEl.textContent = activity.name;
+  
+  // ========== 社团链接 ==========
+  const clubLink = actScreen.querySelector('.act-club-link');
+  if(clubLink){
+    clubLink.textContent = (club ? club.name : '社团') + ' ›';
+    clubLink.onclick = () => go('s-club', {clubId: activity.clubId});
+  }
+  
+  // ========== 活动信息 ==========
+  const timeEl = actScreen.querySelector('.act-time');
+  const venueEl = actScreen.querySelector('.act-venue');
+  const priceEl = actScreen.querySelector('.act-price');
+  const durationEl = actScreen.querySelector('.act-duration');
+  
+  if(timeEl) timeEl.textContent = activity.time;
+  if(venueEl) venueEl.textContent = activity.venue;
+  if(priceEl) priceEl.textContent = activity.free === '免费' ? '免费开放' : activity.price || '详情咨询';
+  if(durationEl) durationEl.textContent = activity.duration;
+  
+  // ========== 活动介绍 ==========
+  const introEl = actScreen.querySelector('.act-intro');
+  if(introEl) introEl.textContent = activity.intro;
+  
+  // ========== 更新心形按钮状态 ==========
+  updateHeartButtonState(activityId);
+  
+  console.log('Activity page update complete');
+}
+
+function goToActivityClub(){
+  if(currentContext.activityId){
+    const activity = ACTIVITIES_DB[currentContext.activityId];
+    if(activity){
+      go('s-club', {clubId: activity.clubId});
+    }
+  }
+}
+
+function updateMessagePage(clubId){
+  const msgScreen = document.getElementById('s-msg-detail');
+  if(!msgScreen) return;
+  
+  // 保存当前查看的社团ID到context中，用于提问提交
+  currentContext.currentMessageClubId = clubId;
+  
+  const club = CLUBS_DB[clubId];
+  const msgData = MESSAGES_DB[clubId];
+  
+  // 更新头部信息
+  msgScreen.querySelector('.msgd-avatar').textContent = club?.emoji || '❓';
+  msgScreen.querySelector('.msgd-name').textContent = club?.name || '未知社团';
+  msgScreen.querySelector('.msgd-status').textContent = msgData?.status || '欢迎咨询';
+  
+  const bubblesContainer = msgScreen.querySelector('.msg-bubbles');
+  const inputBar = msgScreen.querySelector('.msg-input-bar');
+  
+  if(!msgData){
+    // ========== 没有消息数据：显示欢迎界面 ==========
+    if(bubblesContainer){
+      bubblesContainer.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:200px;text-align:center;padding:30px 20px">
+          <div style="font-size:48px;margin-bottom:16px">${club?.emoji || '❓'}</div>
+          <div style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:8px">欢迎咨询${club?.name || '社团'}</div>
+          <div style="font-size:14px;color:var(--text2);margin-bottom:20px;line-height:1.6">
+            目前还没有常见问题，<br>欢迎提出你的问题！
+          </div>
+          <div style="font-size:76px;margin:20px 0">💭</div>
+        </div>
+      `;
+    }
+  } else {
+    // ========== 有消息数据：显示对话气泡 ==========
+    if(bubblesContainer){
+      bubblesContainer.innerHTML = msgData.bubbles.map(bubble => {
+        const isMe = bubble.from === 'me';
+        return `
+          <div class="bubble-row${isMe ? ' me' : ''}">
+            <div class="bubble-av">${isMe ? '😊' : msgData.emoji}</div>
+            <div class="bubble ${isMe ? 'me' : 'them'}">${bubble.text.replace(/\n/g, '<br>')}</div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+}
+
+function submitQuestion(){
+  const input = document.getElementById('msg-input');
+  const text = input?.value?.trim();
+  
+  if(!text){
+    toast('请输入问题');
+    return;
+  }
+  
+  const clubId = currentContext.currentMessageClubId;
+  if(!clubId || !CLUBS_DB[clubId]){
+    toast('社团信息错误');
+    return;
+  }
+  
+  // 添加问题到用户数据
+  USER_DATA.addQuestion(clubId, text);
+  
+  // ========== 在消息详情页中添加气泡 ==========
+  const bubblesContainer = document.querySelector('.msg-bubbles');
+  if(bubblesContainer){
+    const newBubble = document.createElement('div');
+    newBubble.className = 'bubble-row me';
+    newBubble.innerHTML = `
+      <div class="bubble-av">😊</div>
+      <div class="bubble me">${text}</div>
+    `;
+    bubblesContainer.appendChild(newBubble);
+    
+    // 滚动到最底部
+    bubblesContainer.scrollTop = bubblesContainer.scrollHeight;
+  }
+  
+  // 清空输入框
+  input.value = '';
+  
+  // 刷新消息中心页面
+  const msgScreen = document.getElementById('s-messages');
+  if(msgScreen && msgScreen.style.display !== 'none'){
+    // 消息中心页面可能在背景，稍后刷新即可
+    setTimeout(() => {
+      // 可以在用户返回消息中心时刷新
+    }, 100);
+  }
+  
+  // 显示反馈
+  toast('问题已提交');
+}
+
+function updateMessagesCenter(){
+  const container = document.getElementById('messages-list-container');
+  if(!container) return;
+  
+  // 获取用户提交的问题
+  const userQuestions = USER_DATA.getQuestions ? USER_DATA.getQuestions() : [];
+  
+  // 获取现有的消息对话
+  const messageClubIds = MESSAGES_DB ? Object.keys(MESSAGES_DB) : [];
+  
+  let html = '';
+  
+  // ========== 显示用户提交的问题（最新的在前面）==========
+  if(userQuestions.length > 0){
+    html += userQuestions.map(question => {
+      const club = CLUBS_DB[question.clubId];
+      const preview = question.text.substring(0, 50);
+      const avatarBg = club?.cardBg || 'rgba(38,70,83,.08)';
+      
+      return `<div class="msg-item" onclick="go('s-msg-detail', {messageTarget:'${question.clubId}'})">
+        <div class="msg-avatar" style="background:${avatarBg}">${question.emoji}</div>
+        <div style="flex:1;min-width:0">
+          <div class="msg-name">${question.clubName}</div>
+          <div class="msg-preview">${preview}${question.text.length > 50 ? '...' : ''}</div>
+        </div>
+        <div class="msg-time" style="font-size:12px;color:var(--text2)">我的提问</div>
+      </div>`;
+    }).join('');
+  }
+  
+  // ========== 显示现有的消息对话 ==========
+  if(messageClubIds.length > 0){
+    html += messageClubIds.map(clubId => {
+      const msgData = MESSAGES_DB[clubId];
+      const club = CLUBS_DB[clubId];
+      if(!msgData || !club) return '';
+      
+      // 获取最后一条消息内容
+      const lastBubble = msgData.bubbles.length > 0 ? msgData.bubbles[msgData.bubbles.length - 1].text : '';
+      const preview = lastBubble.replace(/\n/g, ' ').substring(0, 50);
+      
+      return `<div class="msg-item" onclick="go('s-msg-detail', {messageTarget:'${clubId}'})">
+        <div class="msg-avatar" style="background:${club.cardBg}">${msgData.emoji}</div>
+        <div style="flex:1;min-width:0">
+          <div class="msg-name">${msgData.clubName}</div>
+          <div class="msg-preview">${preview}…</div>
+        </div>
+        <div class="msg-time">最新</div>
+      </div>`;
+    }).join('');
+  }
+  
+  if(html){
+    container.innerHTML = html;
+  } else {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3)">暂无消息，点击社团的"提问"开始咨询</div>';
+  }
+}
+
+function updateHeartButtonState(id){
+  // 支持社团（club）和活动（activity）
+  let heartBtn = null;
+  if(CLUBS_DB[id]) {
+    heartBtn = document.getElementById('heart-btn'); // 社团用heart-btn
+  } else if(ACTIVITIES_DB[id]) {
+    heartBtn = document.getElementById('activity-heart-btn'); // 活动用activity-heart-btn
+  }
+  
+  if(!heartBtn) return;
+  
+  if(USER_DATA.isLiked(id)){
+    heartBtn.classList.add('liked');
+  } else {
+    heartBtn.classList.remove('liked');
+  }
+}
+
+function updateProfileFavorites(){
+  // ========== 更新用户画像标签 ==========
+  const phTags = document.querySelector('.ph-tags');
+  if(phTags && USER_DATA.matchResult && USER_DATA.matchResult.userProfile && USER_DATA.matchResult.userProfile.tags){
+    const tags = USER_DATA.matchResult.userProfile.tags;
+    const colorClasses = ['pht1', 'pht2', 'pht3']; // 红、绿、橙
+    
+    phTags.innerHTML = tags.slice(0, 3).map((tag, idx) => {
+      const tagClass = colorClasses[idx % colorClasses.length];
+      return `<div class="ph-tag ${tagClass}">✨ ${tag}</div>`;
+    }).join('');
+  }
+  
+  // ========== 更新收藏列表 ==========
+  const container = document.getElementById('ptab-fav') || document.getElementById('profile-favorites-container');
+  if(!container) return;
+  
+  const likedClubIds = USER_DATA.getLikedClubs();
+  const likedActivityIds = USER_DATA.getLikedActivities();
+  
+  if(likedClubIds.length === 0 && likedActivityIds.length === 0){
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3)">还没有收藏任何内容<br><span style="font-size:12px">在社团或活动详情页点击爱心可收藏</span></div>';
+    return;
+  }
+  
+  let html = '';
+  
+  // 显示收藏的社团
+  html += likedClubIds.map(clubId => {
+    const club = CLUBS_DB[clubId];
+    if(!club) return '';
+    
+    return `<div class="profile-list-item" onclick="go('s-club', {clubId:'${clubId}'})">
+      <div class="pli-icon" style="background:${club.cardBg}20">${club.emoji}</div>
+      <div style="flex:1;min-width:0">
+        <div class="pli-name">${club.name}</div>
+        <div class="pli-meta">${club.category} · ${club.timeInvestment}</div>
+      </div>
+      <svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+    </div>`;
+  }).join('');
+  
+  // 显示收藏的活动
+  html += likedActivityIds.map(activityId => {
+    const activity = ACTIVITIES_DB[activityId];
+    if(!activity) return '';
+    
+    return `<div class="profile-list-item" onclick="go('s-activity', {activityId:'${activityId}'})">
+      <div class="pli-icon" style="background:rgba(38,70,83,.06)">${activity.emoji}</div>
+      <div style="flex:1;min-width:0">
+        <div class="pli-name">${activity.name}</div>
+        <div class="pli-meta">${activity.category || '活动'} · 📅 ${activity.date || '待定'}</div>
+      </div>
+      <svg width="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+    </div>`;
+  }).join('');
+  
+  container.innerHTML = html;
+}
+
+// 更新用户中心的消息列表
+function updateProfileMessages(){
+  const container = document.getElementById('ptab-msg');
+  if(!container) return;
+  
+  // 获取用户提交的问题
+  const userQuestions = USER_DATA.getQuestions ? USER_DATA.getQuestions() : [];
+  
+  // 获取现有的消息对话
+  const messageClubIds = MESSAGES_DB ? Object.keys(MESSAGES_DB) : [];
+  
+  if(messageClubIds.length === 0 && userQuestions.length === 0){
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3)">暂无提问记录<br><span style="font-size:12px">在社团详情页点击"提问"可提出问题</span></div>';
+    return;
+  }
+  
+  let html = '';
+  
+  // ========== 显示用户提交的问题（最新的在前面） ==========
+  if(userQuestions.length > 0){
+    html += userQuestions.map(question => {
+      const timeStr = getTimeString(question.time);
+      const statusText = question.status === 'replied' ? '已回复' : '等待回复';
+      const statusClass = question.status === 'replied' ? 'ps-done' : 'ps-pending';
+      
+      return `<div class="profile-list-item" onclick="go('s-msg-detail', {messageTarget:'${question.clubId}'})">
+        <div class="pli-icon" style="background:${CLUBS_DB[question.clubId]?.cardBg || 'rgba(38,70,83,.08)'}">${question.emoji}</div>
+        <div style="flex:1;min-width:0">
+          <div class="pli-name">${question.clubName}</div>
+          <div class="pli-meta">${question.text.substring(0, 40)}${question.text.length > 40 ? '...' : ''}</div>
+        </div>
+        <div class="pli-status ${statusClass}">${statusText}</div>
+      </div>`;
+    }).join('');
+  }
+  
+  // ========== 显示现有的消息对话 ==========
+  if(messageClubIds.length > 0){
+    html += messageClubIds.map(clubId => {
+      const msgData = MESSAGES_DB[clubId];
+      const club = CLUBS_DB[clubId];
+      if(!msgData || !club) return '';
+      
+      // 获取最后一条消息内容
+      const lastBubble = msgData.bubbles.length > 0 ? msgData.bubbles[msgData.bubbles.length - 1].text : '';
+      const preview = lastBubble.replace(/\n/g, ' ').substring(0, 40);
+      
+      const statusText = '已回';
+      const statusClass = 'ps-done';
+      
+      return `<div class="profile-list-item" onclick="go('s-msg-detail', {messageTarget:'${clubId}'})">
+        <div class="pli-icon" style="background:${club.cardBg}">${msgData.emoji}</div>
+        <div style="flex:1;min-width:0">
+          <div class="pli-name">${msgData.clubName}</div>
+          <div class="pli-meta">${preview}…</div>
+        </div>
+        <div class="pli-status ${statusClass}">${statusText}</div>
+      </div>`;
+    }).join('');
+  }
+  
+  if(html){
+    container.innerHTML = html;
+  } else {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3)">暂无提问记录</div>';
+  }
+}
+
+function getTimeString(timestamp){
+  if(!timestamp) return '最近';
+  
+  const now = new Date().getTime();
+  const diffMs = now - timestamp;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if(diffMins < 1) return '刚刚';
+  if(diffMins < 60) return `${diffMins}分钟前`;
+  if(diffHours < 24) return `${diffHours}小时前`;
+  if(diffDays === 1) return '昨天';
+  if(diffDays < 7) return `${diffDays}天前`;
+  
+  const date = new Date(timestamp);
+  return `${date.getMonth() + 1}月${date.getDate()}日`;
+}
+
+// ═════════════════════════════════════════════
+// MATCH QUIZ 匹配测试相关函数
+// ═════════════════════════════════════════════
+
+// 全局存储问卷答案
+let quizData = {
+  q1: null,  // 第1题单选
+  q2: [],    // 第2题多选
+  q3: null,  // 第3题单选
+  q4: null,  // 第4题单选
+  customAnswers: {}  // 其他选项的自定义答案
+};
+
+// 选择单选题选项
+function selectQuizOption(questionNum, answer, element) {
+  // 除去兄弟元素的 .on 类
+  const siblings = element.parentElement.querySelectorAll('.opt');
+  siblings.forEach(el => {
+    if(!el.querySelector('.other-input')) {
+      el.classList.remove('on');
+    }
+  });
+  element.classList.add('on');
+  
+  // 隐藏其他输入框
+  const otherInput = document.getElementById(`q${questionNum}-other-input`);
+  if(otherInput) otherInput.style.display = 'none';
+  if(otherInput) otherInput.value = '';
+  
+  // 保存答案
+  quizData[`q${questionNum}`] = answer;
+  delete quizData.customAnswers[`q${questionNum}`];
+}
+
+// 切换多选题选项
+function toggleMultiOption(questionNum, answer, element) {
+  element.classList.toggle('on');
+  
+  // 如果选中其他选项的元素且有多选，需要特殊处理
+  const selected = Array.from(element.parentElement.querySelectorAll('.opt.on'))
+    .filter(el => !el.querySelector('.other-input'))
+    .map(el => el.querySelector('.opt-text').textContent.trim());
+  
+  quizData.q2 = selected;
+}
+
+// 切换"其他"输入框
+function toggleOtherInput(questionNum, element) {
+  const input = document.getElementById(`q${questionNum}-other-input`);
+  
+  // 如果这是一个选项元素（有 opt 类）
+  if(element.classList.contains('opt')) {
+    // 移除其他选项的 on 类
+    const siblings = element.parentElement.querySelectorAll('.opt:not([id^="q"])');
+    siblings.forEach(el => {
+      if(el !== element && !el.querySelector('.other-input')) {
+        el.classList.remove('on');
+      }
+    });
+    
+    element.classList.toggle('on');
+    
+    if(input) {
+      if(element.classList.contains('on')) {
+        // 显示输入框并设置为必填状态
+        input.style.display = 'block';
+        input.setAttribute('required', 'required');
+        input.setAttribute('placeholder', '请输入自定义答案 (必填)');
+        input.focus();
+        // 清空之前的值
+        input.value = '';
+        // 标记该题未完成（必须填写输入框）
+        if(questionNum === 1) quizData.q1 = null;
+        else if(questionNum === 2) quizData.q2 = [];
+        else if(questionNum === 3) quizData.q3 = null;
+        else if(questionNum === 4) quizData.q4 = null;
+      } else {
+        // 取消选择时隐藏输入框
+        input.style.display = 'none';
+        input.value = '';
+        input.removeAttribute('required');
+        delete quizData.customAnswers[`q${questionNum}`];
+        if(questionNum === 1) quizData.q1 = null;
+        else if(questionNum === 2) quizData.q2 = [];
+        else if(questionNum === 3) quizData.q3 = null;
+        else if(questionNum === 4) quizData.q4 = null;
+      }
+    }
+  }
+}
+
+// 移动到下一题（验证当前题）
+function nextMatchQuestion(currentQ, nextQ) {
+  // 验证当前题是否有答案
+  let hasAnswer = false;
+  let errorMsg = '请选择一个选项';
+  
+  if(currentQ === 1 || currentQ === 3 || currentQ === 4) {
+    // 单选题
+    if(quizData[`q${currentQ}`]) {
+      hasAnswer = true;
+    } else {
+      // 检查是否选了"其他"
+      const otherOption = document.querySelector(`#s-match-quiz${currentQ} .opt`)?.parentElement?.querySelector('.opt img, .opt div');
+      const input = document.getElementById(`q${currentQ}-other-input`);
+      
+      if(input && input.style.display !== 'none') {
+        // "其他"选项已显示,强制填写
+        if(input.value.trim()) {
+          quizData.customAnswers[`q${currentQ}`] = input.value.trim();
+          quizData[`q${currentQ}`] = `其他: ${input.value.trim()}`;
+          hasAnswer = true;
+        } else {
+          // "其他"被选中但没有填写文字
+          errorMsg = '⚠️ "其他"选项必须填写内容';
+          toast(errorMsg);
+          input.focus();
+          return;
+        }
+      }
+    }
+  } else if(currentQ === 2) {
+    // 多选题
+    if(quizData.q2.length > 0) {
+      hasAnswer = true;
+    } else {
+      const input = document.getElementById(`q${currentQ}-other-input`);
+      
+      if(input && input.style.display !== 'none') {
+        // "其他"选项已显示,强制填写
+        if(input.value.trim()) {
+          quizData.customAnswers[`q${currentQ}`] = input.value.trim();
+          quizData.q2 = [`其他: ${input.value.trim()}`];
+          hasAnswer = true;
+        } else {
+          errorMsg = '⚠️ "其他"选项必须填写内容';
+          toast(errorMsg);
+          input.focus();
+          return;
+        }
+      }
+    }
+  }
+  
+  if(!hasAnswer) {
+    toast(errorMsg);
+    return;
+  }
+  
+  // 移动到下一题
+  go(`s-match-quiz-${nextQ}`);
+}
+
+// 完成问卷
+function completeMatchQuiz() {
+  // 验证第4题
+  if(!quizData.q4) {
+    const input = document.getElementById('q4-other-input');
+    
+    if(input && input.style.display !== 'none') {
+      // "其他"选项已显示,强制填写
+      if(input.value.trim()) {
+        quizData.customAnswers.q4 = input.value.trim();
+        quizData.q4 = `其他: ${input.value.trim()}`;
+      } else {
+        toast('⚠️ "其他"选项必须填写内容');
+        input.focus();
+        return;
+      }
+    } else {
+      toast('请完成所有问题');
+      return;
+    }
+  }
+  
+  // 保存答案到用户数据
+  USER_DATA.saveMatchAnswers(quizData);
+  
+  // 立即跳转到结果页面（显示加载状态）
+  go('s-match-result');
+  
+  // 然后执行匹配算法（异步）
+  matchClubsWithLLM(quizData);
+}
+
+// LLM匹配算法 - 调用后端API
+function matchClubsWithLLM(answers) {
+  // 显示加载状态
+  const resultList = document.getElementById('match-result-list');
+  if(resultList) {
+    resultList.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">⏳ 正在为你匹配最佳社团...</div>';
+  }
+  
+  // 后端API地址
+  const API_URL = 'http://localhost:5000/api/match';
+  
+  // 发送请求到后端
+  fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify(answers)
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`API错误: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(result => {
+    console.log('LLM返回结果:', result);
+    
+    if(result.success && result.data && result.data.clubs) {
+      // 成功：使用LLM的结果
+      USER_DATA.saveMatchResult(result.data);
+      console.log('✅ LLM匹配成功');
+      // 立即渲染结果
+      updateMatchResultPage();
+    } else {
+      // 失败：使用备用算法
+      console.warn('LLM返回格式错误，使用备用算法');
+      const fallbackResult = calculateMatchScore(answers);
+      USER_DATA.saveMatchResult(fallbackResult);
+      updateMatchResultPage();
+    }
+  })
+  .catch(error => {
+    // 错误：使用备用算法
+    console.error('❌ LLM API调用失败:', error.message);
+    console.log('📊 使用备用匹配算法...');
+    
+    // 显示备用提示
+    toast('✨ 使用本地匹配算法进行推荐');
+    
+    const fallbackResult = calculateMatchScore(answers);
+    USER_DATA.saveMatchResult(fallbackResult);
+    updateMatchResultPage();
+  });
+}
+
+// 计算匹配分数
+function calculateMatchScore(answers) {
+  const clubIds = ['drama', 'photo', 'coding', 'green'];
+  const scores = {};
+  
+  // 基础分
+  Object.keys(clubIds).forEach(id => scores[id] = 50);
+  
+  // 根据兴趣方向加分
+  const interest = answers.q1 || '';
+  if(interest.includes('艺术')) {
+    scores['drama'] += 15;
+    scores['photo'] += 15;
+  } else if(interest.includes('学术')) {
+    scores['coding'] += 20;
+  } else if(interest.includes('公益')) {
+    scores['green'] += 20;
+  }
+  
+  // 根据参与目标加分
+  const goals = answers.q2 || [];
+  if(goals.toString().includes('朋友')) {
+    scores['drama'] += 10;
+    scores['green'] += 10;
+  }
+  if(goals.toString().includes('经验')) {
+    scores['coding'] += 10;
+    scores['photo'] += 8;
+  }
+  if(goals.toString().includes('比赛')) {
+    scores['coding'] += 15;
+  }
+  
+  // 根据时间投入调整
+  const time = answers.q3 || '';
+  if(time.includes('灵活')) {
+    scores['green'] += 10;
+    scores['photo'] += 5;
+  } else if(time.includes('5小时以上')) {
+    scores['drama'] += 12;
+    scores['coding'] += 10;
+  }
+  
+  // 根据经验水平调整
+  const exp = answers.q4 || '';
+  if(exp.includes('零基础')) {
+    scores['drama'] += 10;
+    scores['green'] += 8;
+  } else if(exp.includes('高手')) {
+    scores['coding'] += 15;
+  }
+  
+  // 排序并返回结果
+  const sorted = Object.entries(scores)
+    .map(([clubId, score]) => ({
+      clubId,
+      name: CLUBS_DB[clubId]?.name || '未知',
+      score: Math.min(100, score),
+      reason: getMatchReason(clubId, score)
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+  
+  return { clubs: sorted };
+}
+
+// 获取匹配理由
+function getMatchReason(clubId, score) {
+  const reasons = {
+    'drama': '根据你的兴趣方向和参与目标，戏剧社是一个很好的选择',
+    'photo': '摄影协会的灵活参加方式适合你的时间安排',
+    'coding': '计算机协会适合想要积累经验和参加竞赛的你',
+    'green': '环保公益社以灵活的时间和服务精神匹配你的需求'
+  };
+  return reasons[clubId] || '匹配度高';
+}
+
+// 清除匹配数据并重新开始
+function clearAndRestartQuiz() {
+  USER_DATA.clearMatchData();
+  quizData = { q1: null, q2: [], q3: null, q4: null, customAnswers: {} };
+  // 清除所有选择状态
+  document.querySelectorAll('.opt').forEach(opt => opt.classList.remove('on'));
+  document.querySelectorAll('.other-input').forEach(input => {
+    input.style.display = 'none';
+    input.value = '';
+  });
+  go('s-match-quiz');
+}
+
+function updateRecruitPage(clubId){
+  const club = CLUBS_DB[clubId];
+  if(!club || !club.recruitment) return;
+  
+  const recruitScreen = document.getElementById('s-recruit');
+  if(!recruitScreen) return;
+  
+  // ========== 顶部emoji和社团名称 ==========
+  const headerEls = recruitScreen.querySelectorAll('.recruit-emoji');
+  const orgEls = recruitScreen.querySelectorAll('.recruit-org');
+  
+  headerEls.forEach(el => {
+    el.textContent = club.emoji;
+    el.style.background = club.cardBg;
+  });
+  orgEls.forEach(el => el.textContent = club.name);
+  
+  // ========== 招新标题 ==========
+  const titleEl = recruitScreen.querySelector('div[style*="font-size:18px"]');
+  if(titleEl) titleEl.textContent = club.recruitment.title;
+  
+  // ========== 招新信息网格 ==========
+  const infoGrids = recruitScreen.querySelectorAll('.info-grid');
+  if(infoGrids.length > 0) {
+    const deptText = club.recruitment.departments === 0 
+      ? '不分部门' 
+      : `${club.recruitment.departments}个部门`;
+    
+    infoGrids[0].innerHTML = `
+      <div class="ig-item"><div class="ig-lb">截止日期</div><div class="ig-val" style="color:var(--coral);font-weight:600">${club.recruitment.deadline}</div></div>
+      <div class="ig-item"><div class="ig-lb">招募方向</div><div class="ig-val">${deptText}</div></div>
+      <div class="ig-item"><div class="ig-lb">门槛要求</div><div class="ig-val">${club.threshold}</div></div>
+      <div class="ig-item"><div class="ig-lb">招募人数</div><div class="ig-val">约${club.recruitment.quota}人</div></div>
+    `;
+  }
+  
+  // ========== 开放部门（如果有的话） ==========
+  const infoBlocks = recruitScreen.querySelectorAll('.info-block');
+  let deptBlock = null;
+  let processBlock = null;
+  
+  infoBlocks.forEach(block => {
+    const title = block.querySelector('.ib-title');
+    if(title && title.textContent.includes('开放部门')) {
+      deptBlock = block;
+    }
+    if(title && title.textContent.includes('招募流程')) {
+      processBlock = block;
+    }
+  });
+  
+  // 更新部门卡片
+  if(club.recruitment.departmentDetails && Object.keys(club.recruitment.departmentDetails).length > 0) {
+    if(deptBlock) {
+      const deptContainer = deptBlock.querySelector('div[style*="flex-direction:column"]');
+      if(deptContainer) {
+        deptContainer.innerHTML = Object.entries(club.recruitment.departmentDetails).map(([dept, desc]) => 
+          `<div style="background:var(--off);border-radius:12px;padding:12px 14px">
+            <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">🎯 ${dept}</div>
+            <div style="font-size:12px;color:var(--text2)">${desc}</div>
+          </div>`
+        ).join('');
+      }
+    }
+  }
+  
+  // 更新招募流程
+  if(club.recruitment.process && processBlock) {
+    const processContainer = processBlock.querySelector('div[style*="flex-direction:column"]');
+    if(processContainer) {
+      processContainer.innerHTML = club.recruitment.process.map(p =>
+        `<div style="display:flex;gap:10px;align-items:center">
+          <div style="width:24px;height:24px;border-radius:50%;background:var(${
+            p.step === 1 ? '--coral' : p.step === 2 ? '--peach' : '--teal'
+          });color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${p.step}</div>
+          <div style="font-size:13px;color:var(--text)">${p.text}（${p.deadline}）</div>
+        </div>`
+      ).join('');
+    }
+  }
+  
+  // ========== 更新按钮事件 ==========
+  const ctaBar = recruitScreen.querySelector('.cta-bar');
+  if(ctaBar){
+    const buttons = ctaBar.querySelectorAll('[class*="btn-"]');
+    if(buttons.length >= 2){
+      buttons[0].onclick = () => go('s-msg-detail', {messageTarget: clubId});
+      buttons[1].onclick = () => go('s-apply', {clubId: clubId});
+    }
+  }
+}
+
+function updateApplyPage(clubId){
+  const club = CLUBS_DB[clubId];
+  if(!club || !club.recruitment) return;
+  
+  const applyScreen = document.getElementById('s-apply');
+  if(!applyScreen) return;
+  
+  // 更新目标社团信息
+  const applyHeadEmoji = applyScreen.querySelector('.apply-target-emoji');
+  const applyHeadName = applyScreen.querySelector('.apply-target-name');
+  const applyHeadSub = applyScreen.querySelector('.apply-target-sub');
+  
+  if(applyHeadEmoji) {
+    applyHeadEmoji.textContent = club.emoji;
+    applyHeadEmoji.parentElement.style.background = club.cardBg;
+  }
+  if(applyHeadName) applyHeadName.textContent = club.recruitment.title;
+  if(applyHeadSub) applyHeadSub.textContent = club.name;
+}
+
+function updateChrome(id){
+  const sb = document.getElementById('statusbar');
+  const bn = document.getElementById('bottomnav');
+  // status bar
+  if(DARK_SB.has(id)){ sb.className='sb-dark'; }
+  else { sb.className='sb-light'; }
+  // bottom nav
+  if(NO_NAV.has(id)){ bn.style.display='none'; }
+  else { bn.style.display='flex'; }
+  
+  // Show/hide nav-match and nav-manage based on current screen
+  const adminScreens = ['s-manage','s-edit-club','s-publish','s-applications','s-stats','s-faq','s-profile-admin'];
+  const navMatch = document.getElementById('nav-match');
+  const navManage = document.getElementById('nav-manage');
+  if(adminScreens.includes(id)){
+    navMatch.style.display='none';
+    navManage.style.display='flex';
+  } else {
+    navMatch.style.display='flex';
+    navManage.style.display='none';
+  }
+  
+  // nav active state
+  const navMap = {
+    's-explore':'nav-explore','s-search':'nav-explore','s-club':'nav-explore',
+    's-activity':'nav-explore','s-recruit':'nav-explore','s-apply':'nav-explore','s-apply-success':'nav-explore',
+    's-match-guide':'nav-match','s-match-quiz':'nav-match','s-match-quiz-2':'nav-match','s-match-quiz-3':'nav-match','s-match-quiz-4':'nav-match','s-match-result':'nav-match',
+    's-messages':'nav-messages','s-msg-detail':'nav-messages','s-msg-detail-admin':'nav-messages',
+    's-profile':'nav-profile','s-settings':'nav-profile','s-profile-admin':'nav-profile',
+    's-manage':'nav-manage','s-edit-club':'nav-manage','s-publish':'nav-manage',
+    's-applications':'nav-manage','s-stats':'nav-manage','s-faq':'nav-manage',
+  };
+  const navId = navMap[id];
+  document.querySelectorAll('.nv').forEach(n=>n.classList.remove('active'));
+  if(navId) document.getElementById(navId)?.classList.add('active');
+}
+
+/* ═══════════════════════════════════
+   TOAST
+═══════════════════════════════════ */
+let toastTimer;
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 2000);
+}
+
+function toggleLike(btn){
+  const clubId = currentContext.clubId;
+  if(!clubId) return;
+  
+  const isNowLiked = USER_DATA.toggleLike(clubId);
+  
+  if(isNowLiked){
+    btn.classList.add('liked');
+    toast('❤️ 已收藏');
+  } else {
+    btn.classList.remove('liked');
+    toast('❌ 已取消收藏');
+  }
+  
+  // 更新个人主页收藏列表
+  updateProfileFavorites();
+}
+
+// 切换活动收藏
+function toggleActivityLike(btn){
+  const activityId = currentContext.activityId;
+  if(!activityId) return;
+  
+  const isNowLiked = USER_DATA.toggleLike(activityId);
+  
+  if(isNowLiked){
+    btn.classList.add('liked');
+    toast('❤️ 已收藏');
+  } else {
+    btn.classList.remove('liked');
+    toast('❌ 已取消收藏');
+  }
+  
+  // 更新个人主页收藏列表
+  updateProfileFavorites();
+}
+
+/* ═══════════════════════════════════
+   MICRO INTERACTIONS
+═══════════════════════════════════ */
+function toggleOpt(el){
+  el.classList.toggle('on');
+}
+function switchQuiz(questionNum, el){
+  el.closest('.option-list').querySelectorAll('.opt').forEach(o=>o.classList.remove('on'));
+  el.classList.add('on');
+}
+function toggleFilter(el){
+  el.closest('.filter-row, [style]').querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+}
+function toggleRtab(el){
+  el.closest('.result-tabs').querySelectorAll('.rtab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+}
+function switchCtab(el, tabName){
+  const tabsContainer = el.closest('.club-tabs');
+  tabsContainer.querySelectorAll('.ctab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  
+  // 隐藏所有内容，显示对应标签页
+  const screen = el.closest('.screen');
+  if(screen){
+    screen.querySelectorAll('.ctab-content').forEach(content => content.style.display = 'none');
+    const targetContent = screen.querySelector('#ctab-' + tabName);
+    if(targetContent) targetContent.style.display = 'block';
+  }
+}
+
+// 问答展开/收起
+function toggleQA(el){
+  const answer = el.querySelector('.qa-answer');
+  if(answer){
+    const isOpen = answer.style.maxHeight && answer.style.maxHeight !== '0px';
+    if(isOpen){
+      answer.style.maxHeight = '0';
+      el.querySelector('span:last-child').textContent = '+';
+    } else {
+      answer.style.maxHeight = answer.scrollHeight + 'px';
+      el.querySelector('span:last-child').textContent = '−';
+    }
+  }
+}
+
+// 用户问答点赞功能
+function toggleQALike(el, clubId, msgIdx){
+  const likeCount = el.querySelector('.like-count');
+  if(!likeCount) return;
+  
+  // 切换点赞状态
+  el.classList.toggle('liked');
+  
+  // 更新点赞数
+  let count = parseInt(likeCount.textContent) || 0;
+  if(el.classList.contains('liked')){
+    count++;
+    el.style.color = 'var(--teal)';
+    likeCount.textContent = count;
+  } else {
+    count = Math.max(0, count - 1);
+    el.style.color = 'var(--text3)';
+    likeCount.textContent = count;
+  }
+  
+  // 保存点赞状态到 MESSAGES_DB
+  if(MESSAGES_DB && MESSAGES_DB[clubId] && MESSAGES_DB[clubId].userQA && MESSAGES_DB[clubId].userQA[msgIdx]){
+    MESSAGES_DB[clubId].userQA[msgIdx].likes = count;
+  }
+}
+
+// 社团详情页 - 直接提问
+function submitClubQuestion(clubId){
+  const inputEl = document.getElementById(`qa-input-${clubId}`);
+  if(!inputEl) return;
+  
+  const questionText = inputEl.value.trim();
+  if(!questionText){
+    toast('请输入问题');
+    return;
+  }
+  
+  // 获取社团信息
+  const club = CLUBS_DB[clubId];
+  if(!club) return;
+  
+  // 创建新问题
+  const newQuestion = {
+    asker: '匿名用户', // 可以改成 USER_NAME
+    q: questionText,
+    date: '刚刚',
+    clubId: clubId,
+    clubName: club.name,
+    emoji: club.emoji,
+    a: null, // 待社团回复
+    replier: null,
+    likes: 0
+  };
+  
+  // 1. 添加到用户数据的提问记录（用于个人主页）
+  USER_DATA.addQuestion(clubId, questionText);
+  
+  // 2. 添加到社团的用户问答列表
+  if(MESSAGES_DB && MESSAGES_DB[clubId]){
+    if(!MESSAGES_DB[clubId].userQA){
+      MESSAGES_DB[clubId].userQA = [];
+    }
+    MESSAGES_DB[clubId].userQA.unshift(newQuestion);
+  }
+  
+  // 3. 清空输入框
+  inputEl.value = '';
+  inputEl.placeholder = '谢谢你的提问！';
+  
+  // 4. 显示提示
+  toast('✨ 提问已发送，社团将在24小时内回复');
+  
+  // 5. 刷新页面显示
+  setTimeout(() => {
+    updateClubPage(clubId);
+    inputEl.placeholder = '有什么想问的吗？';
+  }, 1000);
+}
+
+function switchPtab(el, containerId, showId){
+  el.closest('.profile-tabs').querySelectorAll('.ptab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  const container = document.getElementById(containerId);
+  container.querySelectorAll('[id^="ptab-"]').forEach(d=>d.style.display='none');
+  document.getElementById(showId).style.display='block';
+}
+
+// 初始化分类过滤器
+function initializeClubCards(){
+  const container = document.getElementById('clubs-container');
+  if(!container) return;
+  
+  // 清空现有卡片
+  container.innerHTML = '';
+  
+  // 生成所有社团卡片
+  Object.entries(CLUBS_DB).forEach(([clubId, club]) => {
+    // 根据tags提取信息
+    const hasRecruiting = true; // 假设都在招新中
+    const tagInfo = club.tags && club.tags.length > 0 ? club.tags[0] : '社团';
+    
+    // 创建卡片HTML
+    const card = document.createElement('div');
+    card.className = 'club-card-h';
+    card.setAttribute('data-clubid', clubId);
+    card.setAttribute('data-category', club.category);
+    card.onclick = function() { go('s-club', {clubId: clubId}); };
+    
+    // 生成tag标签
+    let tagsHtml = '<div class="mini-tag mini-warm">招新中</div>';
+    if(club.tags && club.tags.length > 0){
+      tagsHtml += `<div class="mini-tag">${club.tags[0]}</div>`;
+    }
+    
+    card.innerHTML = `
+      <div class="cch-img" style="background:${club.cardBg}">
+        ${club.emoji}
+      </div>
+      <div class="cch-body">
+        <div class="cch-name">${club.name}</div>
+        <div class="cch-desc">${club.slogan}</div>
+        <div class="cch-tags">
+          ${tagsHtml}
+        </div>
+      </div>
+    `;
+    
+    container.appendChild(card);
+  });
+}
+
+// Initialize search results with all clubs
+function initializeSearchResults(){
+  const container = document.getElementById('search-results-container');
+  if(!container) return;
+  
+  // 清空现有结果
+  container.innerHTML = '';
+  
+  // 生成所有社团的招新卡片
+  Object.entries(CLUBS_DB).forEach(([clubId, club]) => {
+    const card = document.createElement('div');
+    card.className = 'recruit-card';
+    card.setAttribute('data-clubid', clubId);
+    card.setAttribute('data-category', club.category);
+    card.setAttribute('data-type', 'club');
+    
+    // 为所有社团添加"招新"标签
+    const tags = [...(club.tags || []), '招新'];
+    card.setAttribute('data-tags', JSON.stringify(tags));
+    card.onclick = function() { go('s-club', {clubId: clubId}); };
+    
+    card.innerHTML = `
+      <div class="recruit-emoji" style="background:${club.cardBg}">
+        ${club.emoji}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="recruit-org">${club.category}</div>
+        <div class="recruit-title">${club.name}</div>
+        <div class="recruit-meta">
+          <div class="mini-tag mini-warm" style="font-size:11px;padding:3px 8px">招新中</div>
+          <div class="recruit-dept">${club.threshold} · ${club.timeInvestment}</div>
+        </div>
+      </div>
+    `;
+    
+    container.appendChild(card);
+  });
+  
+  // 生成所有活动卡片
+  Object.entries(ACTIVITIES_DB).forEach(([activityId, activity]) => {
+    const club = CLUBS_DB[activity.clubId];
+    if(!club) return;
+    
+    const card = document.createElement('div');
+    card.className = 'act-card';
+    card.setAttribute('data-activityid', activityId);
+    card.setAttribute('data-clubid', activity.clubId);
+    card.setAttribute('data-type', 'activity');
+    card.setAttribute('data-category', club.category);
+    // 活动继承所属俱乐部的标签
+    card.setAttribute('data-tags', JSON.stringify(club.tags || []));
+    card.onclick = function() { go('s-activity', {activityId: activityId}); };
+    
+    card.innerHTML = `
+      <div class="act-cover" style="background:${club.heroGradient}">
+        <span>${activity.emoji}</span>
+        <div class="act-cover-badge">${activity.category || '活动'}</div>
+      </div>
+      <div class="act-body">
+        <div class="act-org">${club.name}</div>
+        <div class="act-title">${activity.name}</div>
+        <div class="act-meta">
+          <span>🗓 ${activity.date} ${activity.startTime}</span>
+          <span>📍 ${activity.venue}</span>
+          <span>🎟 ${activity.free}</span>
+        </div>
+      </div>
+    `;
+    
+    container.appendChild(card);
+  });
+}
+
+// Filter search results by category or tags
+// 综合过滤函数 - 同时应用类型、分类、搜索词的过滤（AND逻辑）
+function applyAllFilters(){
+  const container = document.getElementById('search-results-container');
+  if(!container) return;
+  
+  // 获取当前选中的类型筛选
+  const typeFilterEl = document.getElementById('type-filter');
+  const typeSelectedPill = typeFilterEl?.querySelector('.filter-pill.on');
+  const selectedType = typeSelectedPill?.textContent.trim() || 'all';
+  const typeValue = selectedType === '全部' ? 'all' : (selectedType === '社团' ? 'club' : 'activity');
+  
+  // 获取当前选中的分类筛选 - 找第二个hscroll（第一个是type-filter）
+  const searchHeader = document.querySelector('.search-header');
+  const allHScrolls = searchHeader?.querySelectorAll('.hscroll') || [];
+  const categoryFilterEl = allHScrolls.length > 1 ? allHScrolls[1] : null;
+  const categorySelectedPill = categoryFilterEl?.querySelector('.filter-pill.on');
+  const selectedCategoryText = categorySelectedPill?.textContent.trim() || '全部';
+  
+  // 将显示文本映射到实际过滤值
+  let filterType = null;
+  if(selectedCategoryText === '正在招新') filterType = '招新';
+  else if(selectedCategoryText === '低门槛') filterType = '低门槛';
+  else if(selectedCategoryText === '艺术类') filterType = '艺术';
+  else if(selectedCategoryText === '学术类') filterType = '学术';
+  else if(selectedCategoryText === '职业类') filterType = '职业';
+  else if(selectedCategoryText === '公益类') filterType = '公益';
+  
+  // 获取搜索关键词
+  const searchInput = document.getElementById('search-input');
+  const searchKeyword = searchInput?.value.toLowerCase() || '';
+  
+  // 应用过滤
+  const cards = container.querySelectorAll('.recruit-card, .act-card');
+  cards.forEach(card => {
+    const cardType = card.getAttribute('data-type');
+    const isClub = card.classList.contains('recruit-card');
+    let shouldShow = true;
+    
+    // 条件1：类型过滤（AND）
+    if(typeValue !== 'all'){
+      shouldShow = cardType === typeValue;
+    }
+    
+    // 条件2：分类过滤（AND）- 对社团和活动都有效
+    if(shouldShow && filterType !== null){
+      const category = card.getAttribute('data-category') || '';
+      const tags = JSON.parse(card.getAttribute('data-tags') || '[]');
+      const categoryMatch = category.includes(filterType);
+      const tagsMatch = tags.some(tag => tag.includes(filterType));
+      shouldShow = categoryMatch || tagsMatch;
+    }
+    
+    // 条件3：搜索关键词（AND）
+    if(shouldShow && searchKeyword){
+      if(isClub){
+        const clubName = card.querySelector('.recruit-title')?.textContent || '';
+        const clubOrg = card.querySelector('.recruit-org')?.textContent || '';
+        const nameMatch = clubName.toLowerCase().includes(searchKeyword);
+        const orgMatch = clubOrg.toLowerCase().includes(searchKeyword);
+        shouldShow = nameMatch || orgMatch;
+      } else {
+        const actTitle = card.querySelector('.act-title')?.textContent || '';
+        const actOrg = card.querySelector('.act-org')?.textContent || '';
+        const titleMatch = actTitle.toLowerCase().includes(searchKeyword);
+        const orgMatch = actOrg.toLowerCase().includes(searchKeyword);
+        shouldShow = titleMatch || orgMatch;
+      }
+    }
+    
+    if(shouldShow){
+      card.classList.remove('hidden');
+    } else {
+      card.classList.add('hidden');
+    }
+  });
+}
+
+function filterSearchResults(filterType, el){
+  // Update filter pill states - only in the second hscroll
+  el.closest('.hscroll:not(#type-filter)').querySelectorAll('.filter-pill').forEach(p => p.classList.remove('on'));
+  el.classList.add('on');
+  
+  // 清空搜索框，避免搜索关键词和分类过滤冲突
+  const searchInput = document.getElementById('search-input');
+  if(searchInput) searchInput.value = '';
+  
+  // 应用所有过滤条件
+  applyAllFilters();
+}
+
+// 按类型过滤（活动/社团）
+function filterByType(type, el){
+  const typeFilter = document.getElementById('type-filter');
+  if(!typeFilter) return;
+  
+  typeFilter.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('on'));
+  el.classList.add('on');
+  
+  // 清空搜索框，避免搜索关键词和类型过滤冲突
+  const searchInput = document.getElementById('search-input');
+  if(searchInput) searchInput.value = '';
+  
+  // 应用所有过滤条件
+  applyAllFilters();
+}
+
+// 搜索社团和活动
+function searchClubs(searchKeyword){
+  if(!searchKeyword){
+    // 如果搜索框为空，显示全部
+    initializeSearchResults();
+    const firstPill = document.querySelector('#type-filter .filter-pill:first-child');
+    if(firstPill){
+      filterByType('all', firstPill);
+    }
+    return;
+  }
+  
+  // 设置搜索框的值（防止清空输入）
+  const searchInput = document.getElementById('search-input');
+  if(searchInput) searchInput.value = searchKeyword;
+  
+  // 应用所有过滤条件
+  applyAllFilters();
+}
+
+// Initialize category filters from clubs data
+function initializeCategoryFilter(){
+  const filterContainer = document.getElementById('category-filter');
+  if(!filterContainer) return;
+  
+  // 收集所有唯一的分类
+  const categories = new Set();
+  Object.values(CLUBS_DB).forEach(club => {
+    if(club.category) categories.add(club.category);
+  });
+  
+  // 排序并转换为数组
+  const sortedCategories = Array.from(categories).sort();
+  
+  // 清空容器，保留"全部"按钮
+  const allChip = filterContainer.querySelector('.chip.on');
+  filterContainer.innerHTML = '';
+  if(allChip) {
+    filterContainer.appendChild(allChip);
+  }
+  
+  // 添加分类chips
+  sortedCategories.forEach(cat => {
+    const chip = document.createElement('div');
+    chip.className = 'chip off';
+    chip.textContent = cat;
+    chip.onclick = function() { filterByCategory(cat, this); };
+    filterContainer.appendChild(chip);
+  });
+}
+
+// 展开/收起所有社团
+function expandAllClubs(){
+  const hscroll = document.getElementById('clubs-container');
+  const allList = document.getElementById('all-clubs-list');
+  const moreBtn = document.querySelector('.sec-hd:first-of-type .sec-more');
+  
+  if(!hscroll || !allList) return;
+  
+  // 切换显示/隐藏
+  if(allList.style.display === 'none' || !allList.style.display){
+    // 展开：隐藏hscroll，显示完整列表
+    hscroll.style.display = 'none';
+    allList.style.display = 'block';
+    
+    // 清空并生成所有社团卡片
+    allList.innerHTML = '';
+    Object.entries(CLUBS_DB).forEach(([clubId, club]) => {
+      const card = document.createElement('div');
+      card.className = 'recruit-card';
+      card.onclick = function() { go('s-club', {clubId: clubId}); };
+      
+      card.innerHTML = `
+        <div class="recruit-emoji" style="background:${club.cardBg}">
+          ${club.emoji}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div class="recruit-org">${club.category}</div>
+          <div class="recruit-title">${club.name}</div>
+          <div class="recruit-meta">
+            <div class="mini-tag mini-warm" style="font-size:11px;padding:3px 8px">招新中</div>
+            <div class="recruit-dept">${club.threshold} · ${club.timeInvestment}</div>
+          </div>
+        </div>
+      `;
+      allList.appendChild(card);
+    });
+    
+    if(moreBtn) moreBtn.textContent = '收起';
+  } else {
+    // 收起：显示hscroll，隐藏完整列表
+    hscroll.style.display = 'flex';
+    allList.style.display = 'none';
+    if(moreBtn) moreBtn.textContent = '查看全部';
+  }
+}
+
+// Filter clubs by category
+function filterByCategory(category, el){
+  // Update chip states
+  document.querySelectorAll('#category-filter .chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  
+  // Get clubs container
+  const clubsContainer = document.getElementById('clubs-container');
+  if(!clubsContainer) return;
+  
+  // Filter all club cards
+  clubsContainer.querySelectorAll('.club-card-h').forEach(card => {
+    const clubCategory = card.getAttribute('data-category');
+    
+    if(category === null || clubCategory === category){
+      card.classList.remove('hidden');
+    } else {
+      card.classList.add('hidden');
+    }
+  });
+}
+
+/* initial chrome */
+USER_DATA.load();
+updateChrome('s-welcome');
+document.getElementById('bottomnav').style.display='none';
+</script>
+</body>
+</html>

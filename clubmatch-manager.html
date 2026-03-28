@@ -1772,15 +1772,22 @@ function updatePageContent(id){
     initializeClubCards();
     initializeCategoryFilter();
   } else if(id === 's-search'){
-    initializeSearchResults();
-    
-    // 为搜索输入框添加事件监听
+    // 清空搜索输入框
     const searchInput = document.getElementById('search-input');
     if(searchInput){
-      searchInput.addEventListener('input', function(e){
+      searchInput.value = '';
+      // 移除旧的事件监听器（防止重复添加）
+      const newSearchInput = searchInput.cloneNode(true);
+      searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+      
+      // 添加新的事件监听器
+      newSearchInput.addEventListener('input', function(e){
         searchClubs(e.target.value);
       });
     }
+    
+    // 初始化搜索结果
+    initializeSearchResults();
   }
 }
 
@@ -1946,36 +1953,47 @@ function updateClubPage(clubId){
     const clubMessages = MESSAGES_DB ? MESSAGES_DB[currentContext.clubId] : null;
     const userQA = clubMessages && clubMessages.userQA ? clubMessages.userQA : [];
     
+    // 构建提问输入框
+    let qaHtml = `
+      <div class="info-block">
+        <div class="ib-title">💬 用户问答</div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <input type="text" id="qa-input-${currentContext.clubId}" placeholder="有什么想问的吗？" style="flex:1;padding:10px 12px;border:1px solid rgba(38,70,83,.15);border-radius:8px;font-size:13px;outline:none" />
+          <button onclick="submitClubQuestion('${currentContext.clubId}')" style="padding:10px 16px;background:var(--teal);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:12px">提问</button>
+        </div>
+      </div>
+    `;
+    
+    // 添加已有的用户问答
     if(userQA && userQA.length > 0){
-      qaUserContainer.innerHTML = `<div class="info-block"><div class="ib-title">💬 用户问答</div></div>` + 
-        userQA.map((msg, idx) => `
-          <div class="info-block">
-            <div style="display:flex;align-items:flex-start;gap:10px">
-              <div style="font-size:24px">👤</div>
-              <div style="flex:1;min-width:0">
-                <div style="font-weight:600;color:var(--text);font-size:14px">${msg.asker || '匿名用户'}</div>
-                <div style="font-size:13px;color:var(--text2);margin-top:2px">${msg.q}</div>
-                <div style="display:flex;gap:8px;margin-top:6px">
-                  <div style="font-size:11px;background:var(--off);padding:4px 8px;border-radius:6px;color:var(--text3)">${msg.date || '最近'}</div>
-                </div>
+      qaHtml += userQA.map((msg, idx) => `
+        <div class="info-block">
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <div style="font-size:24px">👤</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;color:var(--text);font-size:14px">${msg.asker || '匿名用户'}</div>
+              <div style="font-size:13px;color:var(--text2);margin-top:2px">${msg.q}</div>
+              <div style="display:flex;gap:8px;margin-top:6px">
+                <div style="font-size:11px;background:var(--off);padding:4px 8px;border-radius:6px;color:var(--text3)">${msg.date || '最近'}</div>
               </div>
             </div>
-            <!-- 回复 -->
-            ${msg.a ? `<div style="margin-top:12px;margin-left:34px;padding-left:10px;border-left:2px solid rgba(38,70,83,.1)">
-              <div style="font-weight:600;color:var(--teal);font-size:13px">${msg.replier || '社团'}</div>
-              <div style="font-size:13px;color:var(--text);margin-top:4px">${msg.a}</div>
-              <div style="display:flex;gap:12px;margin-top:8px">
-                <div class="qa-like-btn" style="cursor:pointer;display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text3)" onclick="toggleQALike(this, '${currentContext.clubId}', ${idx})">
-                  <span>👍</span>
-                  <span class="like-count">${msg.likes || 0}</span>
-                </div>
-              </div>
-            </div>` : ''}
           </div>
-        `).join('');
-    } else {
-      qaUserContainer.innerHTML = `<div class="info-block"><div class="ib-title">💬 用户问答</div><div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">还没有用户提问<br><span onclick="go('s-msg-detail', {messageTarget: currentContext.clubId})" style="color:var(--teal);cursor:pointer">点击提问 →</span></div></div>`;
+          <!-- 回复 -->
+          ${msg.a ? `<div style="margin-top:12px;margin-left:34px;padding-left:10px;border-left:2px solid rgba(38,70,83,.1)">
+            <div style="font-weight:600;color:var(--teal);font-size:13px">${msg.replier || '社团'}</div>
+            <div style="font-size:13px;color:var(--text);margin-top:4px">${msg.a}</div>
+            <div style="display:flex;gap:12px;margin-top:8px">
+              <div class="qa-like-btn" style="cursor:pointer;display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text3)" onclick="toggleQALike(this, '${currentContext.clubId}', ${idx})">
+                <span>👍</span>
+                <span class="like-count">${msg.likes || 0}</span>
+              </div>
+            </div>
+          </div>` : ''}
+        </div>
+      `).join('');
     }
+    
+    qaUserContainer.innerHTML = qaHtml;
   }
   
   
@@ -2999,6 +3017,59 @@ function toggleQALike(el, clubId, msgIdx){
   }
 }
 
+// 社团详情页 - 直接提问
+function submitClubQuestion(clubId){
+  const inputEl = document.getElementById(`qa-input-${clubId}`);
+  if(!inputEl) return;
+  
+  const questionText = inputEl.value.trim();
+  if(!questionText){
+    toast('请输入问题');
+    return;
+  }
+  
+  // 获取社团信息
+  const club = CLUBS_DB[clubId];
+  if(!club) return;
+  
+  // 创建新问题
+  const newQuestion = {
+    asker: '匿名用户', // 可以改成 USER_NAME
+    q: questionText,
+    date: '刚刚',
+    clubId: clubId,
+    clubName: club.name,
+    emoji: club.emoji,
+    a: null, // 待社团回复
+    replier: null,
+    likes: 0
+  };
+  
+  // 1. 添加到用户数据的提问记录（用于个人主页）
+  USER_DATA.addQuestion(clubId, questionText);
+  
+  // 2. 添加到社团的用户问答列表
+  if(MESSAGES_DB && MESSAGES_DB[clubId]){
+    if(!MESSAGES_DB[clubId].userQA){
+      MESSAGES_DB[clubId].userQA = [];
+    }
+    MESSAGES_DB[clubId].userQA.unshift(newQuestion);
+  }
+  
+  // 3. 清空输入框
+  inputEl.value = '';
+  inputEl.placeholder = '谢谢你的提问！';
+  
+  // 4. 显示提示
+  toast('✨ 提问已发送，社团将在24小时内回复');
+  
+  // 5. 刷新页面显示
+  setTimeout(() => {
+    updateClubPage(clubId);
+    inputEl.placeholder = '有什么想问的吗？';
+  }, 1000);
+}
+
 function switchPtab(el, containerId, showId){
   el.closest('.profile-tabs').querySelectorAll('.ptab').forEach(t=>t.classList.remove('on'));
   el.classList.add('on');
@@ -3100,6 +3171,8 @@ function initializeSearchResults(){
     card.setAttribute('data-clubid', activity.clubId);
     card.setAttribute('data-type', 'activity');
     card.setAttribute('data-category', club.category);
+    // 活动继承所属俱乐部的标签
+    card.setAttribute('data-tags', JSON.stringify(club.tags || []));
     card.onclick = function() { go('s-activity', {activityId: activityId}); };
     
     card.innerHTML = `
@@ -3123,50 +3196,69 @@ function initializeSearchResults(){
 }
 
 // Filter search results by category or tags
-function filterSearchResults(filterType, el){
-  // Update filter pill states - only in the second hscroll
-  el.closest('.hscroll:not(#type-filter)').querySelectorAll('.filter-pill').forEach(p => p.classList.remove('on'));
-  el.classList.add('on');
-  
-  // Get search input value
-  const searchInput = document.getElementById('search-input');
-  const searchKeyword = searchInput ? searchInput.value.toLowerCase() : '';
-  
-  // Get all cards
+// 综合过滤函数 - 同时应用类型、分类、搜索词的过滤（AND逻辑）
+function applyAllFilters(){
   const container = document.getElementById('search-results-container');
   if(!container) return;
   
+  // 获取当前选中的类型筛选
+  const typeFilterEl = document.getElementById('type-filter');
+  const typeSelectedPill = typeFilterEl?.querySelector('.filter-pill.on');
+  const selectedType = typeSelectedPill?.textContent.trim() || 'all';
+  const typeValue = selectedType === '全部' ? 'all' : (selectedType === '社团' ? 'club' : 'activity');
+  
+  // 获取当前选中的分类筛选 - 找第二个hscroll（第一个是type-filter）
+  const searchHeader = document.querySelector('.search-header');
+  const allHScrolls = searchHeader?.querySelectorAll('.hscroll') || [];
+  const categoryFilterEl = allHScrolls.length > 1 ? allHScrolls[1] : null;
+  const categorySelectedPill = categoryFilterEl?.querySelector('.filter-pill.on');
+  const selectedCategoryText = categorySelectedPill?.textContent.trim() || '全部';
+  
+  // 将显示文本映射到实际过滤值
+  let filterType = null;
+  if(selectedCategoryText === '正在招新') filterType = '招新';
+  else if(selectedCategoryText === '低门槛') filterType = '低门槛';
+  else if(selectedCategoryText === '艺术类') filterType = '艺术';
+  else if(selectedCategoryText === '学术类') filterType = '学术';
+  else if(selectedCategoryText === '职业类') filterType = '职业';
+  else if(selectedCategoryText === '公益类') filterType = '公益';
+  
+  // 获取搜索关键词
+  const searchInput = document.getElementById('search-input');
+  const searchKeyword = searchInput?.value.toLowerCase() || '';
+  
+  // 应用过滤
   const cards = container.querySelectorAll('.recruit-card, .act-card');
   cards.forEach(card => {
+    const cardType = card.getAttribute('data-type');
     const isClub = card.classList.contains('recruit-card');
     let shouldShow = true;
     
-    if(isClub){
-      const category = card.getAttribute('data-category');
+    // 条件1：类型过滤（AND）
+    if(typeValue !== 'all'){
+      shouldShow = cardType === typeValue;
+    }
+    
+    // 条件2：分类过滤（AND）- 对社团和活动都有效
+    if(shouldShow && filterType !== null){
+      const category = card.getAttribute('data-category') || '';
       const tags = JSON.parse(card.getAttribute('data-tags') || '[]');
-      const clubName = card.querySelector('.recruit-title')?.textContent || '';
-      const clubOrg = card.querySelector('.recruit-org')?.textContent || '';
-      
-      // 首先按筛选类型过滤
-      if(filterType !== null){
-        const categoryMatch = category.includes(filterType);
-        const tagsMatch = tags.some(tag => tag.includes(filterType));
-        shouldShow = categoryMatch || tagsMatch;
-      }
-      
-      // 然后按搜索关键词过滤
-      if(shouldShow && searchKeyword){
+      const categoryMatch = category.includes(filterType);
+      const tagsMatch = tags.some(tag => tag.includes(filterType));
+      shouldShow = categoryMatch || tagsMatch;
+    }
+    
+    // 条件3：搜索关键词（AND）
+    if(shouldShow && searchKeyword){
+      if(isClub){
+        const clubName = card.querySelector('.recruit-title')?.textContent || '';
+        const clubOrg = card.querySelector('.recruit-org')?.textContent || '';
         const nameMatch = clubName.toLowerCase().includes(searchKeyword);
         const orgMatch = clubOrg.toLowerCase().includes(searchKeyword);
         shouldShow = nameMatch || orgMatch;
-      }
-    } else {
-      // 处理活动卡片
-      const actTitle = card.querySelector('.act-title')?.textContent || '';
-      const actOrg = card.querySelector('.act-org')?.textContent || '';
-      
-      // 按搜索关键词过滤
-      if(searchKeyword){
+      } else {
+        const actTitle = card.querySelector('.act-title')?.textContent || '';
+        const actOrg = card.querySelector('.act-org')?.textContent || '';
         const titleMatch = actTitle.toLowerCase().includes(searchKeyword);
         const orgMatch = actOrg.toLowerCase().includes(searchKeyword);
         shouldShow = titleMatch || orgMatch;
@@ -3181,6 +3273,19 @@ function filterSearchResults(filterType, el){
   });
 }
 
+function filterSearchResults(filterType, el){
+  // Update filter pill states - only in the second hscroll
+  el.closest('.hscroll:not(#type-filter)').querySelectorAll('.filter-pill').forEach(p => p.classList.remove('on'));
+  el.classList.add('on');
+  
+  // 清空搜索框，避免搜索关键词和分类过滤冲突
+  const searchInput = document.getElementById('search-input');
+  if(searchInput) searchInput.value = '';
+  
+  // 应用所有过滤条件
+  applyAllFilters();
+}
+
 // 按类型过滤（活动/社团）
 function filterByType(type, el){
   const typeFilter = document.getElementById('type-filter');
@@ -3189,26 +3294,12 @@ function filterByType(type, el){
   typeFilter.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('on'));
   el.classList.add('on');
   
-  const container = document.getElementById('search-results-container');
-  if(!container) return;
+  // 清空搜索框，避免搜索关键词和类型过滤冲突
+  const searchInput = document.getElementById('search-input');
+  if(searchInput) searchInput.value = '';
   
-  const cards = container.querySelectorAll('.recruit-card, .act-card');
-  cards.forEach(card => {
-    const cardType = card.getAttribute('data-type');
-    
-    let shouldShow = true;
-    
-    // 按类型过滤
-    if(type !== 'all'){
-      shouldShow = cardType === type;
-    }
-    
-    if(shouldShow){
-      card.classList.remove('hidden');
-    } else {
-      card.classList.add('hidden');
-    }
-  });
+  // 应用所有过滤条件
+  applyAllFilters();
 }
 
 // 搜索社团和活动
@@ -3216,45 +3307,19 @@ function searchClubs(searchKeyword){
   if(!searchKeyword){
     // 如果搜索框为空，显示全部
     initializeSearchResults();
-    const firstPill = document.querySelector('#type-filter .filter-pill.on');
+    const firstPill = document.querySelector('#type-filter .filter-pill:first-child');
     if(firstPill){
       filterByType('all', firstPill);
     }
     return;
   }
   
-  const container = document.getElementById('search-results-container');
-  if(!container) return;
+  // 设置搜索框的值（防止清空输入）
+  const searchInput = document.getElementById('search-input');
+  if(searchInput) searchInput.value = searchKeyword;
   
-  const keyword = searchKeyword.toLowerCase();
-  const cards = container.querySelectorAll('.recruit-card, .act-card');
-  
-  cards.forEach(card => {
-    const isClub = card.classList.contains('recruit-card');
-    let isMatch = false;
-    
-    if(isClub){
-      const clubName = card.querySelector('.recruit-title')?.textContent || '';
-      const clubOrg = card.querySelector('.recruit-org')?.textContent || '';
-      const clubDept = card.querySelector('.recruit-dept')?.textContent || '';
-      
-      isMatch = clubName.toLowerCase().includes(keyword) || 
-                clubOrg.toLowerCase().includes(keyword) || 
-                clubDept.toLowerCase().includes(keyword);
-    } else {
-      const actTitle = card.querySelector('.act-title')?.textContent || '';
-      const actOrg = card.querySelector('.act-org')?.textContent || '';
-      
-      isMatch = actTitle.toLowerCase().includes(keyword) || 
-                actOrg.toLowerCase().includes(keyword);
-    }
-    
-    if(isMatch){
-      card.classList.remove('hidden');
-    } else {
-      card.classList.add('hidden');
-    }
-  });
+  // 应用所有过滤条件
+  applyAllFilters();
 }
 
 // Initialize category filters from clubs data
