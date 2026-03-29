@@ -662,15 +662,14 @@ def internal_error(error):
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
-    debug = os.getenv('DEBUG', 'False').lower() == 'true'
     
     print(f"""
 ╔═══════════════════════════════════════════════════════╗
 ║       ClubMatch LLM Backend 启动                      ║
 ╠═══════════════════════════════════════════════════════╣
 ║ LLM类型: {os.getenv('LLM_TYPE', 'openai')}
-║ 服务器: http://localhost:{port}                    
-║ 调试模式: {'启用' if debug else '关闭'}
+║ 服务器: http://0.0.0.0:{port}                    
+║ 调试模式: 关闭
 ║ 
 ║ 可用端点:
 ║   GET  /health              - 健康检查
@@ -681,4 +680,4 @@ if __name__ == '__main__':
 ╚═══════════════════════════════════════════════════════╝
     """)
     
-    app.run(host='0.0.0.0', port=port, debug=debug)
+    app.run(host='0.0.0.0', port=port, debug=False, threaded=True)

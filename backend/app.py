@@ -397,7 +397,7 @@ class LiteLLMClient(LLMClient):
         # 读取自定义的LiteLLM配置
         self.token = os.getenv('TOKEN')
         self.base_url = os.getenv('BASE_URL')
-        self.model = os.getenv('MODEL', 'gpt-3.5-turbo')  # 使用默认模型
+        self.model = os.getenv('MODEL')
         
         # 如果使用自定义端点，配置LiteLLM
         if self.base_url and self.token:
@@ -662,15 +662,14 @@ def internal_error(error):
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
-    debug = os.getenv('DEBUG', 'False').lower() == 'true'
     
     print(f"""
 ╔═══════════════════════════════════════════════════════╗
 ║       ClubMatch LLM Backend 启动                      ║
 ╠═══════════════════════════════════════════════════════╣
 ║ LLM类型: {os.getenv('LLM_TYPE', 'openai')}
-║ 服务器: http://localhost:{port}                    
-║ 调试模式: {'启用' if debug else '关闭'}
+║ 服务器: http://0.0.0.0:{port}                    
+║ 调试模式: 关闭
 ║ 
 ║ 可用端点:
 ║   GET  /health              - 健康检查
@@ -681,4 +680,4 @@ if __name__ == '__main__':
 ╚═══════════════════════════════════════════════════════╝
     """)
     
-    app.run(host='0.0.0.0', port=port, debug=debug)
+    app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
