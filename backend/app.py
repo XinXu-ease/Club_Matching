@@ -9,8 +9,7 @@ import os
 import json
 import logging
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify, make_response
-from flask_cors import CORS
+from flask import Flask, request, jsonify
 from typing import Dict, List, Any
 import requests
 
