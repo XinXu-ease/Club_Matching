@@ -9,7 +9,7 @@ import os
 import json
 import logging
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
 from typing import Dict, List, Any
 import requests
@@ -43,6 +43,17 @@ def add_cors_headers(response):
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     response.headers['Access-Control-Max-Age'] = '3600'
     return response
+
+# OPTIONS 预检请求处理
+@app.before_request
+def handle_preflight():
+    """处理CORS预检请求"""
+    if request.method == "OPTIONS":
+        response = make_response()
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
+        response.headers.add('Access-Control-Allow-Methods', "GET,PUT,POST,DELETE,OPTIONS")
+        return response
 
 # ═══════════════════════════════════════════════════════
 # LLM 客户端类定义
