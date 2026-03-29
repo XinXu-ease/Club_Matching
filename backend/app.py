@@ -19,41 +19,18 @@ load_dotenv()
 
 # 初始化Flask应用
 app = Flask(__name__)
-CORS(app, 
-     resources={r"/api/*": {
-         "origins": "*",
-         "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
-         "allow_headers": ["Content-Type", "Authorization"],
-         "supports_credentials": False
-     }},
-     allow_headers=["Content-Type"],
-     expose_headers=["Content-Type"]
-)
+
+# 简单的CORS配置
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# CORS响应头处理
-@app.after_request
-def add_cors_headers(response):
-    """确保所有响应都包含CORS头"""
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS, PUT, DELETE'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-    response.headers['Access-Control-Max-Age'] = '3600'
-    return response
-
-# OPTIONS 预检请求处理
-@app.before_request
-def handle_preflight():
-    """处理CORS预检请求"""
-    if request.method == "OPTIONS":
-        response = make_response()
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
-        response.headers.add('Access-Control-Allow-Methods', "GET,PUT,POST,DELETE,OPTIONS")
-        return response
 
 # ═══════════════════════════════════════════════════════
 # LLM 客户端类定义
