@@ -19,12 +19,23 @@ load_dotenv()
 # 初始化Flask应用
 app = Flask(__name__)
 
-# 简单的CORS配置
+# 处理OPTIONS预检请求 - 在before_request中
+@app.before_request
+def before_request():
+    if request.method == 'OPTIONS':
+        response = make_response('', 204)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
+        response.headers['Access-Control-Max-Age'] = '3600'
+        return response
+
+# CORS后处理 - 为所有响应添加CORS头
 @app.after_request
 def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
+    response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
     return response
 
 # 配置日志
@@ -535,7 +546,7 @@ def health_check():
     return jsonify({'status': 'healthy', 'service': 'ClubMatch LLM Backend'})
 
 
-@app.route('/api/match', methods=['POST', 'OPTIONS'])
+@app.route('/api/match', methods=['POST'])
 def match_clubs():
     """
     社团匹配API端点
@@ -561,16 +572,6 @@ def match_clubs():
       }
     }
     """
-    # 处理OPTIONS预检请求
-    if request.method == 'OPTIONS':
-        logger.info("✅ CORS预检请求 (OPTIONS) 返回204")
-        logger.info(f"   Headers: {dict(request.headers)}")
-        response = make_response('', 204)
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
-        return response
-    
     # POST请求处理
     logger.info(f"📨 收到{request.method}请求 from {request.remote_addr}")
     logger.info(f"   Content-Type: {request.content_type}")
