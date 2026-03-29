@@ -19,23 +19,13 @@ load_dotenv()
 # 初始化Flask应用
 app = Flask(__name__)
 
-# 处理OPTIONS预检请求 - 在before_request中
-@app.before_request
-def before_request():
-    if request.method == 'OPTIONS':
-        response = make_response('', 204)
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
-        response.headers['Access-Control-Max-Age'] = '3600'
-        return response
-
-# CORS后处理 - 为所有响应添加CORS头
+# CORS处理 - 为所有响应添加CORS头
 @app.after_request
 def after_request(response):
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
     response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
+    response.headers['Access-Control-Max-Age'] = '3600'
     return response
 
 # 配置日志
