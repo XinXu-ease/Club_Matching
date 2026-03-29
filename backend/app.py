@@ -9,7 +9,7 @@ import os
 import json
 import logging
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify, make_response, Response
 from typing import Dict, List, Any
 import requests
 
@@ -546,7 +546,7 @@ def health_check():
     return jsonify({'status': 'healthy', 'service': 'ClubMatch LLM Backend'})
 
 
-@app.route('/api/match', methods=['POST'])
+@app.route('/api/match', methods=['POST', 'OPTIONS'])
 def match_clubs():
     """
     社团匹配API端点
@@ -572,6 +572,17 @@ def match_clubs():
       }
     }
     """
+    # 处理OPTIONS预检请求
+    if request.method == 'OPTIONS':
+        response = Response()
+        response.status_code = 204
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
+        response.headers['Access-Control-Max-Age'] = '3600'
+        logger.info("✅ OPTIONS preflight handled in route")
+        return response
+    
     # POST请求处理
     logger.info(f"📨 收到{request.method}请求 from {request.remote_addr}")
     logger.info(f"   Content-Type: {request.content_type}")
