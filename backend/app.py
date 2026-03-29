@@ -106,7 +106,7 @@ class OpenAIClient(LLMClient):
         
         self.token = os.getenv('TOKEN')
         self.base_url = os.getenv('BASE_URL', 'https://api.openai.com/v1')
-        self.model = os.getenv('MODEL', 'gpt-5')
+        self.model = os.getenv('MODEL', 'GPT 4.1 Mini')
         
         if not self.token:
             raise ValueError("TOKEN 未配置在 .env 文件中")
