@@ -134,14 +134,16 @@ class OpenAIClient(LLMClient):
             
             content = response.choices[0].message.content
             
-            logger.info(f"OpenAI原始响应 (前500字): {content[:500]}")
-            logger.info(f"OpenAI响应类型: {type(content)}, 长度: {len(content)}")
+            logger.info(f"OpenAI原始响应类型: {type(content)}, 长度: {len(content) if content else 0}")
+            logger.info(f"OpenAI原始响应 (前300字): {content[:300] if content else 'None'}")
             
             # 解析JSON响应
-            return self._parse_response(content)
+            result = self._parse_response(content)
+            logger.info(f"OpenAI解析成功")
+            return result
         
         except Exception as e:
-            logger.error(f"OpenAI匹配失败: {str(e)}")
+            logger.error(f"OpenAI匹配失败: {str(e)}", exc_info=True)
             return self._fallback_response(answers)
     
     def _parse_response(self, content: str) -> Dict[str, Any]:
@@ -156,10 +158,12 @@ class OpenAIClient(LLMClient):
                 end = content.rfind('}') + 1
                 if start >= 0 and end > start:
                     json_str = content[start:end]
+                    logger.info(f"提取的JSON: {json_str[:200]}")
                     return json.loads(json_str)
-            except:
-                pass
+            except Exception as e:
+                logger.error(f"JSON提取失败: {str(e)}")
             
+            logger.error(f"完整响应内容: {content[:500]}")
             raise ValueError("无法解析LLM响应")
     
     def _fallback_response(self, answers: Dict[str, Any]) -> Dict[str, Any]:
