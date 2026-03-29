@@ -19,11 +19,30 @@ load_dotenv()
 
 # 初始化Flask应用
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": os.getenv('ALLOWED_ORIGIN', '*')}})
+CORS(app, 
+     resources={r"/api/*": {
+         "origins": os.getenv('ALLOWED_ORIGIN', '*'),
+         "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
+         "allow_headers": ["Content-Type", "Authorization"],
+         "supports_credentials": True
+     }},
+     allow_headers=["Content-Type"],
+     expose_headers=["Content-Type"]
+)
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# CORS响应头处理
+@app.after_request
+def add_cors_headers(response):
+    """确保所有响应都包含CORS头"""
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS, PUT, DELETE'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    response.headers['Access-Control-Max-Age'] = '3600'
+    return response
 
 # ═══════════════════════════════════════════════════════
 # LLM 客户端类定义
@@ -529,7 +548,7 @@ def health_check():
     return jsonify({'status': 'healthy', 'service': 'ClubMatch LLM Backend'})
 
 
-@app.route('/api/match', methods=['POST'])
+@app.route('/api/match', methods=['POST', 'OPTIONS'])
 def match_clubs():
     """
     社团匹配API端点
@@ -555,11 +574,24 @@ def match_clubs():
       }
     }
     """
+    # 处理OPTIONS预检请求
+    if request.method == 'OPTIONS':
+        logger.info("✅ CORS预检请求 (OPTIONS) 返回204")
+        logger.info(f"   Headers: {dict(request.headers)}")
+        return '', 204
+    
+    # POST请求处理
+    logger.info(f"📨 收到{request.method}请求 from {request.remote_addr}")
+    logger.info(f"   Content-Type: {request.content_type}")
+    logger.info(f"   Request Headers: {dict(request.headers)}")
+    
     try:
         # 获取请求数据
-        data = request.get_json()
+        logger.info(f"   Raw data length: {len(request.get_data()) if request.get_data() else 0} bytes")
+        data = request.get_json(force=True, silent=False)
         
         if not data:
+            logger.warning("⚠️ POST请求体为空")
             return jsonify({
                 'success': False,
                 'error': '请求体不能为空'

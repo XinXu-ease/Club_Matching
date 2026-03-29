@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClubMatch — 选择身份</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --dark:#264653; --teal:#2A9D8F; --gold:#E9C46A;
+      --peach:#F4A261; --coral:#E76F51; --white:#FFFFFF; 
+      --off:#FAFAF8;  --text:#1A2E35;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, #264653 0%, #2A9D8F 100%);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    
+    .container {
+      text-align: center;
+      color: white;
+      max-width: 500px;
+      padding: 20px;
+    }
+    
+    .logo {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+    
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 10px;
+      letter-spacing: -0.5px;
+    }
+    
+    .subtitle {
+      font-size: 16px;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 40px;
+    }
+    
+    .role-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .role-btn {
+      padding: 20px;
+      border: none;
+      border-radius: 16px;
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      min-height: 64px;
+    }
+    
+    .role-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+    }
+    
+    .role-btn:active {
+      transform: translateY(0);
+    }
+    
+    .student-btn {
+      background: linear-gradient(135deg, #F4A261, #E76F51);
+      color: white;
+    }
+    
+    .manager-btn {
+      background: linear-gradient(135deg, #2A9D8F, #1B6A5A);
+      color: white;
+    }
+    
+    .emoji {
+      font-size: 28px;
+    }
+    
+    .footer {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      margin-top: 32px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">🎓</div>
+    <h1>ClubMatch</h1>
+    <p class="subtitle">选择你的身份开始</p>
+    
+    <div class="role-selector">
+      <button class="role-btn student-btn" onclick="window.location.href='clubmatch-student.html'">
+        <span class="emoji">🎓</span>
+        <span>我是学生 / 新生</span>
+      </button>
+      <button class="role-btn manager-btn" onclick="window.location.href='clubmatch-manager.html'">
+        <span class="emoji">🏛️</span>
+        <span>我是社团管理员</span>
+      </button>
+    </div>
+    
+    <p class="footer">你可以随时在个人资料中切换身份</p>
+  </div>
+</body>
+</html>
