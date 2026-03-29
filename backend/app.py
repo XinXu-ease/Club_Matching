@@ -9,7 +9,7 @@ import os
 import json
 import logging
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 from typing import Dict, List, Any
 import requests
 
@@ -565,7 +565,11 @@ def match_clubs():
     if request.method == 'OPTIONS':
         logger.info("✅ CORS预检请求 (OPTIONS) 返回204")
         logger.info(f"   Headers: {dict(request.headers)}")
-        return '', 204
+        response = make_response('', 204)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
+        return response
     
     # POST请求处理
     logger.info(f"📨 收到{request.method}请求 from {request.remote_addr}")
