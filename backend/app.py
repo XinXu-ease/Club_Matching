@@ -397,7 +397,7 @@ class LiteLLMClient(LLMClient):
         # 读取自定义的LiteLLM配置
         self.token = os.getenv('TOKEN')
         self.base_url = os.getenv('BASE_URL')
-        self.model = os.getenv('MODEL')
+        self.model = os.getenv('MODEL', 'gpt-3.5-turbo')  # 使用默认模型
         
         # 如果使用自定义端点，配置LiteLLM
         if self.base_url and self.token:
@@ -405,9 +405,6 @@ class LiteLLMClient(LLMClient):
             self.litellm.api_base = self.base_url
             self.litellm.api_key = self.token
             logger.info(f"LiteLLM已初始化，使用自定义端点: {self.base_url}")
-        
-        if not self.model:
-            raise ValueError("MODEL 未配置在 .env 文件中")
         
         logger.info(f"LiteLLM已初始化，模型: {self.model}")
     
